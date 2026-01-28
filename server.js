@@ -23,8 +23,6 @@ const studentSchema = new mongoose.Schema({
   name: { type: String, required: true },
   className: { type: String, required: false },
   rollNumber: { type: String, required: false },
-  schoolName: { type: String, required: false },
-  schoolAddress: { type: String, required: false },
   academicYear: { type: String, required: false },
   principalComment: { type: String, required: false },
   isArchived: { type: Boolean, default: false },
@@ -78,14 +76,14 @@ app.get('/api/students/:id', async (req, res) => {
 // API endpoint to CREATE a new student
 app.post('/api/students', async (req, res) => {
   try {
-    const { id, name, className, rollNumber, schoolName, schoolAddress, academicYear, principalComment, isArchived, grades } = req.body;
+    const { id, name, className, rollNumber, academicYear, principalComment, isArchived, grades } = req.body;
 
     // Check if a student with this ID already exists
     const existingStudent = await Student.findById(id);
     if (existingStudent) {
       return res.status(409).json({ success: false, message: 'A student with this ID already exists.' });
     }
-    const newStudent = new Student({ _id: id, name, className, rollNumber, schoolName, schoolAddress, academicYear, principalComment, isArchived, grades });
+    const newStudent = new Student({ _id: id, name, className, rollNumber, academicYear, principalComment, isArchived, grades });
     await newStudent.save();
     res.status(201).json({ success: true, message: 'Student added successfully!', data: newStudent });
   } catch (error) {
@@ -96,11 +94,11 @@ app.post('/api/students', async (req, res) => {
 // API endpoint to UPDATE an existing student's data
 app.put('/api/students/:id', async (req, res) => {
   try {
-    const { name, className, rollNumber, schoolName, schoolAddress, academicYear, principalComment, isArchived, grades } = req.body;
+    const { name, className, rollNumber, academicYear, principalComment, isArchived, grades } = req.body;
 
     const updatedStudent = await Student.findByIdAndUpdate(
       req.params.id,
-      { name, className, rollNumber, schoolName, schoolAddress, academicYear, principalComment, isArchived, grades },
+      { name, className, rollNumber, academicYear, principalComment, isArchived, grades },
       { new: true, runValidators: true } // Return the updated document
     );
 

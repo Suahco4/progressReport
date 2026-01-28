@@ -57,8 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function displayReportCard(student) {
         // Populate student info
-        document.getElementById('report-school-name').textContent = student.schoolName || 'School Name Not Provided';
-        document.getElementById('report-school-address').textContent = student.schoolAddress || '';
         document.getElementById('display-name').textContent = student.name;
         document.getElementById('display-id').textContent = student._id;
         document.getElementById('display-class').textContent = student.className || 'N/A';

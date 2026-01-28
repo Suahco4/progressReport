@@ -201,8 +201,6 @@ adminForm.addEventListener('submit', async (e) => {
     const id = document.getElementById('student-id').value.trim();
     const className = document.getElementById('student-class').value.trim();
     const rollNumber = document.getElementById('student-roll').value.trim();
-    const schoolName = document.getElementById('school-name').value.trim();
-    const schoolAddress = document.getElementById('school-address').value.trim();
     const principalComment = document.getElementById('principal-comment').value.trim();
     
     if (!name || !id) {
@@ -251,8 +249,6 @@ adminForm.addEventListener('submit', async (e) => {
         name,
         className,
         rollNumber,
-        schoolName,
-        schoolAddress,
         principalComment,
         grades
     };
@@ -310,8 +306,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const studentRollInput = document.getElementById('student-roll');
     const principalCommentInput = document.getElementById('principal-comment');
     const editIdInput = document.getElementById('edit-student-id');
-    const schoolNameInput = document.getElementById('school-name');
-    const schoolAddressInput = document.getElementById('school-address');
     const loadStudentBtn = document.getElementById('load-student-btn');
     const submitBtn = document.getElementById('submit-btn');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
@@ -340,8 +334,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         try {
             const studentData = await getStudent(studentIdToLoad);
-            schoolNameInput.value = studentData.schoolName || '';
-            schoolAddressInput.value = studentData.schoolAddress || '';
             studentNameInput.value = studentData.name;
             studentClassInput.value = studentData.className || '';
             studentRollInput.value = studentData.rollNumber || '';

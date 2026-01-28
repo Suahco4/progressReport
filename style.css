@@ -1,0 +1,589 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.section {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
+.section h1 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.section p {
+    margin-bottom: 30px;
+    color: #7f8c8d;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+button {
+    background: #3498db;
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s, transform 0.2s;
+    font-weight: 600;
+}
+
+button:hover {
+    background-color: #2980b9;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #95a5a6;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+.btn-danger {
+    background-color: #e74c3c;
+}
+.btn-danger:hover {
+    background-color: #c0392b;
+}
+
+.error {
+    color: #e74c3c;
+    margin-top: 10px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.active {
+    display: block;
+}
+
+.student-info {
+    background: #ecf0f1;
+    padding: 20px;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+
+.student-info h2 {
+    color: #2c3e50;
+}
+
+.grades-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.grades-table th,
+.grades-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.grades-table th {
+    background: #34495e;
+    color: white;
+}
+
+.grades-table tr:hover {
+    background: #f8f9fa;
+}
+
+.overall {
+    background: #d5f4e6;
+    padding: 20px;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .section {
+        padding: 20px;
+    }
+    
+    .grades-table {
+        font-size: 14px;
+    }
+}
+
+/* NEW: Enhanced table styling */
+.grades-table tfoot {
+    font-weight: bold;
+    background: #f8f9fa;
+}
+
+.grades-table th, .grades-table td {
+    min-width: 60px;  /* Prevent squishing */
+}
+
+.sem-avg-th {
+    background: #e8f4fd;  /* Light blue for semester avgs */
+}
+
+.final-avg {
+    font-weight: bold;
+    color: #27ae60;  /* Green for final avgs */
+}
+
+@media (max-width: 768px) {
+    .grades-table {
+        font-size: 12px;
+    }
+    .grades-table th, .grades-table td {
+        padding: 8px;
+        min-width: 40px;
+    }
+}
+
+/* --- Admin Page Specific Enhancements --- */
+
+.nav-back-link {
+    margin-bottom: 25px;
+    text-align: center;
+}
+.nav-back-link a {
+    text-decoration: none;
+    color: #3498db;
+    font-weight: bold;
+}
+
+/* Form Section Styling */
+.form-section {
+    border: 1px solid #e0e0e0;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    background-color: #fdfdfd;
+}
+
+.form-section legend {
+    font-weight: bold;
+    font-size: 1.2em;
+    color: #34495e;
+    padding: 0 10px;
+    margin-left: 10px;
+}
+
+/* Input with Button Group */
+.input-button-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.input-button-group .flex-grow {
+    flex-grow: 1;
+}
+.input-button-group button {
+    padding: 10px 15px; /* Match input height */
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+/* Form Actions */
+.form-actions {
+    text-align: right;
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Admin-Specific Styles */
+.subject-group {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 15px 0;
+}
+
+.subject-group h4 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.score-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+}
+
+.form-group.small {
+    margin-bottom: 5px;
+}
+
+.form-group.small input {
+    font-size: 14px;
+    padding: 5px;
+}
+
+.success {
+    color: #27ae60 !important;  /* Green for success messages */
+}
+
+/* Styles for Real-time Averages Box */
+.overall-averages {
+    background: #ecf0f1;
+    border: 1px solid #bdc3c7;
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 5px;
+}
+
+.avg-box {
+    background: white;
+    padding: 8px;
+    border-radius: 4px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.avg-box span { display: block; font-size: 12px; color: #7f8c8d; }
+.avg-box strong { display: block; font-size: 18px; color: #2c3e50; }
+
+.final-average-summary {
+    text-align: center;
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-around;
+    font-weight: bold;
+    color: #34495e;
+}
+
+/* Period & Subject Management */
+.active-periods-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+.period-tag {
+    background-color: #e0eafc;
+    color: #34495e;
+    padding: 5px 10px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+.remove-period-btn, .remove-subject-btn {
+    background: #bdc3c7;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    margin-left: 8px;
+    padding: 0;
+    line-height: 18px;
+    text-align: center;
+}
+
+/* Utility class for highlighting failing scores */
+.failing-score {
+    color: #e74c3c !important; /* A strong red color */
+}
+
+/* Styling for subject-specific comments */
+.comment-row td {
+    padding: 8px 15px;
+    background-color: #f8f9fa;
+    font-style: italic;
+    color: #555;
+    border-bottom: 1px solid #ddd;
+}
+
+.comment-label {
+    font-weight: bold;
+    font-style: normal;
+    color: #333;
+}
+
+/* Give the subject column a bit more width */
+.subject-col {
+    width: 20%;
+    min-width: 150px;
+    text-align: left !important;
+}
+
+/* --- Print-Specific Styles --- */
+
+/* This block is only applied when printing */
+@media print {
+    /* Hide all elements on the page by default */
+    body * {
+        visibility: hidden;
+    }
+
+    /* Make the report card section and all its children visible */
+    #report-section, #report-section * {
+        visibility: visible;
+    }
+
+    /* Position the report card at the top-left of the print page */
+    #report-section {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        box-shadow: none; /* Remove screen shadow for printing */
+        padding: 0;
+    }
+
+    /* Hide the buttons that are not needed for printing */
+    .report-actions {
+        display: none;
+    }
+
+    /* Ensure table colors print (optional, browser-dependent) */
+    .grades-table thead tr {
+        background-color: #009879 !important;
+        -webkit-print-color-adjust: exact; /* For Chrome/Safari */
+        print-color-adjust: exact; /* Standard */
+    }
+}
+
+/* School Logo Styling */
+#school-logo {
+    display: none; /* Hidden by default on screen */
+    max-width: 150px; /* Adjust as needed */
+    margin: 0 auto 20px auto; /* Center and add space below */
+}
+
+@media print {
+    #school-logo {
+        display: block; /* Show logo when printing */
+    }
+}
+
+/* --- Signature Section Styling --- */
+.signature-section {
+    display: none; /* Hidden by default on screen */
+    justify-content: space-between;
+    margin-top: 80px; /* More space above the signature lines */
+    padding: 0 20px; /* Add some padding on the sides */
+}
+
+.signature-box {
+    width: 40%;
+    text-align: center;
+}
+
+.signature-box p {
+    font-size: 14px;
+    color: #333;
+    margin-top: 5px;
+    margin-bottom: 0; /* Override default paragraph margin */
+}
+
+.signature-line, .date-line {
+    display: block;
+    border-top: 1px solid #333;
+    padding-top: 5px;
+}
+
+@media print {
+    .signature-section {
+        display: flex; /* Show the signature section when printing */
+    }
+}
+
+.highest-score {
+    background-color: #d4edda; /* Light green */
+    font-weight: bold;
+}
+
+.lowest-score {
+    background-color: #f8d7da; /* Light red */
+}
+
+/* --- General Responsive Adjustments --- */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    .section {
+        padding: 20px;
+    }
+    .input-row, .admin-nav {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .input-row input {
+        width: 100%;
+    }
+}
+
+/* --- Admin & Layout Enhancements (Imported) --- */
+.admin-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.input-row input {
+    flex-grow: 1;
+}
+
+#subjects-management-section, #periods-management-section {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.form-actions {
+    margin-top: 30px;
+    display: flex;
+    gap: 10px;
+}
+
+/* General Button Styling Update */
+button, .button-link {
+    display: inline-block;
+    padding: 10px 15px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+    text-decoration: none;
+    line-height: 1.2;
+}
+
+/* Primary Action Buttons */
+#submit-btn, #load-student-btn {
+    background-color: #3498db;
+    color: white;
+}
+
+#submit-btn:hover, #load-student-btn:hover {
+    background-color: #2980b9;
+}
+
+/* Secondary Action Buttons */
+#generate-id-btn, #add-subject-btn, #add-regular-period-btn, #add-exam-period-btn {
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ccc;
+}
+
+#generate-id-btn:hover, #add-subject-btn:hover, #add-regular-period-btn:hover, #add-exam-period-btn:hover {
+    background-color: #e0e0e0;
+    border-color: #bbb;
+}
+
+/* Tertiary/Neutral Action */
+#cancel-edit-btn {
+    background-color: transparent;
+    color: #555;
+    border: 1px solid #ccc;
+}
+
+#cancel-edit-btn:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+/* Destructive Action Button */
+#delete-student-btn {
+    background-color: #e74c3c;
+    color: white;
+}
+
+#delete-student-btn:hover {
+    background-color: #c0392b;
+}
+
+/* Back to Home Link in Login Section */
+.back-home-wrapper {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.back-home-wrapper a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+/* --- Grade Format Toggle Switch (from student.html) --- */
+.report-controls {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 0 10px;
+}
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+    margin-left: 10px;
+}
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}

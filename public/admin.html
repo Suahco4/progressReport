@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin: Add Student Report Card</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="PEDS Progress Report" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* --- Layout Enhancements for Admin Form --- */
+        .admin-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .input-row input {
+            flex-grow: 1;
+        }
+        #subjects-management-section, #periods-management-section {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .form-actions {
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+    <style>
+        /* General Button Styling */
+        button, .button-link {
+            display: inline-block;
+            padding: 10px 15px;
+            border: 1px solid transparent;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+            text-decoration: none;
+            line-height: 1.2;
+        }
+
+        /* Primary Action Buttons (Submit, Load) */
+        #submit-btn, #load-student-btn {
+            background-color: #3498db; /* Blue */
+            color: white;
+        }
+        #submit-btn:hover, #load-student-btn:hover {
+            background-color: #2980b9;
+        }
+
+        /* Secondary Action Buttons (Generate ID, Add Subject/Period) */
+        #generate-id-btn, #add-subject-btn, #add-regular-period-btn, #add-exam-period-btn {
+            background-color: #f0f0f0; /* Light Gray */
+            color: #333;
+            border: 1px solid #ccc;
+        }
+        #generate-id-btn:hover, #add-subject-btn:hover, #add-regular-period-btn:hover, #add-exam-period-btn:hover {
+            background-color: #e0e0e0;
+            border-color: #bbb;
+        }
+
+        /* Tertiary/Neutral Action (Cancel) */
+        #cancel-edit-btn {
+            background-color: transparent;
+            color: #555;
+            border: 1px solid #ccc;
+        }
+        #cancel-edit-btn:hover {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        /* Destructive Action Button (Delete) */
+        #delete-student-btn {
+            background-color: #e74c3c; /* Red */
+            color: white;
+        }
+        #delete-student-btn:hover {
+            background-color: #c0392b;
+        }
+
+        /* Link as a Button */
+        .button-link {
+            background-color: #2ecc71; /* Green */
+            color: white;
+        }
+        .button-link:hover {
+            background-color: #27ae60;
+        }
+
+        /* Back to Portal Link as a Button */
+        .back-link {
+            background-color: #95a5a6; /* Gray */
+            color: white;
+        }
+        .back-link:hover {
+            background-color: #7f8c8d;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="section active">
+            <h1>Admin: Add Student Report Card</h1>
+            <p>Add a new student's grades to the database.</p>
+            
+            <!-- Navigation Links -->
+            <div class="admin-nav">
+                <a href="index.html" class="button-link back-link">← Back to Student Portal</a>
+                <a href="public/student-list.html" class="button-link">View All Registered Students</a>
+            </div>
+
+            <!-- Edit Student Section -->
+            <div class="edit-section">
+                <h2>Edit Existing Student</h2>
+                <div class="form-group input-row">
+                    <label for="edit-student-id">Enter Student ID to Load:</label>
+                    <input type="text" id="edit-student-id" placeholder="e.g., 202412345">
+                    <button type="button" id="load-student-btn">Load Student</button>
+                </div>
+            </div>
+
+            <form id="admin-form">
+                <div class="form-group">
+                    <label for="school-name">School Name:</label>
+                    <input type="text" id="school-name" placeholder="e.g., Central City High School" required>
+                </div>
+                <div class="form-group">
+                    <label for="school-address">School Address:</label>
+                    <input type="text" id="school-address" placeholder="e.g., 123 Education Lane, Knowledge City, 12345">
+                </div>
+                <div class="form-group">
+                    <label for="student-name">Student's Full Name:</label>
+                    <input type="text" id="student-name" placeholder="e.g., New Student" required>
+                </div>
+                <div class="form-group">
+                    <label for="student-class">Class / Section:</label>
+                    <input type="text" id="student-class" placeholder="e.g., 10A">
+                </div>
+                <div class="form-group">
+                    <label for="student-roll">Roll Number:</label>
+                    <input type="text" id="student-roll" placeholder="e.g., 25">
+                </div>
+                <div class="form-group">
+                    <label for="principal-comment">Principal's Comment:</label>
+                    <textarea id="principal-comment" rows="2" placeholder="Overall remarks..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="student-id">Student ID:</label>
+                    <div class="input-row">
+                        <input type="text" id="student-id" placeholder="e.g., 202499999" required>
+                        <button type="button" id="generate-id-btn" title="Generate a new unique student ID">Generate ID</button>
+                    </div>
+                </div>
+
+                <!-- Section for managing subject names -->
+                <div id="subjects-management-section">
+                    <h3>Subjects</h3>
+                    <div id="subject-names-container">
+                        <!-- Subject name inputs will be dynamically generated here -->
+                    </div>
+                    <button type="button" id="add-subject-btn">Add Subject</button>
+                </div>
+
+                <!-- Section for managing periods -->
+                <div id="periods-management-section">
+                    <h3>Periods</h3>
+                    <div id="active-periods-container">
+                        <!-- Active periods will be dynamically generated here -->
+                    </div>
+                    <div class="input-row">
+                        <input type="text" id="new-period-name-input" placeholder="e.g., Midterm Exam">
+                        <button type="button" id="add-regular-period-btn">Add Regular Period</button>
+                        <button type="button" id="add-exam-period-btn">Add Exam Period</button>
+                    </div>
+                </div>
+
+
+                <!-- Section for entering grades period by period -->
+                <div id="grades-by-period-section">
+                    <!-- Period sections will be dynamically generated here -->
+                </div>
+
+                <!-- Real-time Averages Table -->
+                <div class="overall-averages">
+                    <h3>Overall Averages</h3> 
+                    <div id="overall-averages-display" class="score-row">
+                        <!-- Dynamic average boxes will be rendered here -->
+                    </div> 
+                    <div class="final-average-summary">
+                        <span>Semester 1 Avg: <strong id="avg-sem1">0.00</strong></span>
+                        <span>Semester 2 Avg: <strong id="avg-sem2">0.00</strong></span>
+                        <span>Final Overall Avg: <strong id="avg-final">0.00</strong></span>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" id="submit-btn">Add Student to Database</button>
+                    <button type="button" id="cancel-edit-btn" class="hidden">Cancel Edit</button>
+                    <button type="button" id="delete-student-btn" class="hidden">Delete Student</button>
+                </div>
+            </form>
+            <p id="admin-message" class="error hidden"></p>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

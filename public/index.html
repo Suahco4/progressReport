@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Report Card Portal</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* --- Grade Format Toggle Switch --- */
+        .report-controls {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 10px;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+            margin-left: 10px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        /* Add more styles for the toggle slider if you want a fancier switch */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Form (Visible by default) -->
+        <div id="login-section" class="section active">
+            <h1>School Report Card Portal</h1>
+            <p>Enter your student's name and ID to view the progress report.</p>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="student-name">Student's Full Name:</label>
+                    <input type="text" id="student-name" placeholder="e.g., John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label for="student-id">Student ID:</label>
+                    <input type="text" id="student-id" placeholder="e.g., 12345" required>
+                </div>
+                <button type="submit">View Report Card</button>
+            </form>
+            <p id="error-message" class="error hidden">Invalid name or ID. Please try again.</p>
+        </div>
+
+        <!-- Report Card Section (Hidden until login) -->
+        <div id="report-section" class="section hidden">
+            <img id="school-logo" src="logo.png" alt="School Logo">
+            <h1 id="report-title">Progress Report</h1>
+            <div class="student-info">
+                <h2 id="student-info-name"></h2>
+                <p>ID: <span id="student-info-id"></span></p>
+            </div>
+            <div class="report-controls">
+                <label for="grade-format-toggle">Show Number Grades</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="grade-format-toggle">
+                </label>
+            </div>
+            <table id="gradeTable" class="grades-table">
+                <thead>
+                    <!-- Table Header will be populated by JS -->
+                </thead>
+                <tbody id="grades-body">
+                    <!-- Grades populated by JS -->
+                </tbody>
+                <tfoot>
+                    <tr class="average-row" id="sem1-average-row">
+                        <!-- Populated by JS -->
+                    </tr>
+                    <tr class="average-row" id="sem2-average-row">
+                        <!-- Populated by JS -->
+                    </tr>
+                </tfoot>
+            </table>
+            <div class="overall">
+                <h3>Overall Performance: <span id="overall-grade"></span></h3>
+                <p id="overall-comment"></p>
+            </div>
+            <div class="grade-legend">
+                <h4>Grade Legend</h4>
+                <p>The letter grades correspond to the following numerical ranges:</p>
+                <div class="legend-items">
+                    <span><strong>A:</strong> 90-100 = Excellent</span>
+                    <span><strong>B:</strong> 80-89 = Great</span>
+                    <span><strong>C:</strong> 70-79 = Good</span>
+                    <span><strong>D:</strong> 60-69 = Satisfactory</span>
+                    <span><strong>F:</strong> Below 60 = Needs Improvement</span>
+                </div>
+            </div>
+            <div class="signature-section">
+                <div class="signature-box">
+                    <span class="signature-line"></span>
+                    <p>Principal's Signature</p>
+                </div>
+                <div class="signature-box">
+                    <span class="date-line" id="report-date"></span>
+                    <p>Date</p>
+                </div>
+            </div>
+            <div class="report-actions">
+                <button id="print-btn">Print Report</button>
+                <button id="logout-btn" class="btn-secondary">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

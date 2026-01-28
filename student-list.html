@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin: Registered Students</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="shortcut icon" href="favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="PEDS Progress Report" />
+    <link rel="manifest" href="site.webmanifest" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="section active">
+
+            <div id="student-list-container">
+                <p>Loading students...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Create and prepend the back link dynamically
+            const backLinkDiv = document.createElement('div');
+            backLinkDiv.className = 'nav-back';
+            backLinkDiv.innerHTML = '<a href="admin.html" class="button-link back-link">← Back to Admin Panel</a>';
+            document.querySelector('.section.active').prepend(backLinkDiv);
+
+            // Create and prepend the header dynamically
+            const headerDiv = document.createElement('div');
+            headerDiv.innerHTML = '<h1>Registered Students</h1><p>This is a list of all students currently in the database.</p>';
+            document.querySelector('.section.active').prepend(headerDiv);
+
+            // Create and prepend the search bar dynamically
+            const searchDiv = document.createElement('div');
+            searchDiv.className = 'search-container';
+            searchDiv.innerHTML = '<input type="text" id="search-input" class="search-input" placeholder="Search by name or ID...">';
+            document.querySelector('.section.active').insertBefore(searchDiv, document.getElementById('student-list-container'));
+
+            const studentListContainer = document.getElementById('student-list-container');
+
+            async function fetchAndDisplayStudents() {
+                try {
+                    const API_BASE_URL = 'https://online-report-card-frontend.onrender.com';
+                    const response = await fetch(`${API_BASE_URL}/api/students`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    const students = await response.json();
+
+                    studentListContainer.innerHTML = '';
+
+                    if (students.length === 0) {
+                        studentListContainer.innerHTML = '<p>No students are registered in the database yet.</p>';
+                        return;
+                    }
+
+                    const table = document.createElement('table');
+                    table.className = 'student-table';
+
+                    const thead = table.createTHead();
+                    const headerRow = thead.insertRow();
+                    headerRow.innerHTML = '<th>Student Name</th><th>Student ID</th>';
+
+                    const tbody = table.createTBody();
+                    students.forEach(student => {
+                        const row = tbody.insertRow();
+                        const nameCell = row.insertCell();
+                        const idCell = row.insertCell();
+                        
+                        nameCell.textContent = student.name;
+                        nameCell.dataset.label = "Name";
+
+                        // Create a link to the admin page for editing
+                        const editLink = document.createElement('a');
+                        editLink.href = `admin.html?studentId=${student._id}`;
+                        editLink.textContent = student._id;
+                        editLink.title = `Edit ${student.name}`;
+                        idCell.dataset.label = "Student ID";
+                        idCell.appendChild(editLink);
+                    });
+
+                    studentListContainer.appendChild(table);
+                } catch (error) {
+                    console.error('Failed to fetch students:', error);
+                    studentListContainer.innerHTML = '<p class="error">Could not load student data. Please check the console for errors.</p>';
+                }
+            }
+
+            fetchAndDisplayStudents();
+
+            // --- Search/Filter Logic ---
+            const searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('keyup', function() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const tableRows = document.querySelectorAll('.student-table tbody tr');
+                let visibleRows = 0;
+
+                tableRows.forEach(row => {
+                    const nameText = row.cells[0].textContent.toLowerCase();
+                    const idText = row.cells[1].textContent.toLowerCase();
+
+                    if (nameText.includes(searchTerm) || idText.includes(searchTerm)) {
+                        row.style.display = '';
+                        visibleRows++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                // You can add a "No results found" message if needed
+            });
+        });
+    </script>
+</body>
+</html>

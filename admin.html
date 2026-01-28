@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Cards - EduResult</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .hidden {
+            display: none;
+        }
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c7c7cc; 
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a1a1aa; 
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Header -->
+    <header class="w-full max-w-5xl flex justify-between items-center mb-6">
+        <div class="flex items-center gap-3 text-indigo-600">
+            <i class="fa-solid fa-graduation-cap text-3xl md:text-4xl"></i>
+            <h1 class="text-xl md:text-2xl font-bold text-gray-800">EduResult<span class="text-indigo-600">Portal</span></h1>
+        </div>
+        <div>
+            <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">Instructor Access</span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-md md:max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden relative min-h-[500px] flex flex-col transition-all duration-300 ease-in-out">
+        
+        <!-- ==================== ADMIN LOGIN SECTION ==================== -->
+        <div id="admin-login-section" class="w-full flex-1 flex flex-col items-center justify-center p-8 fade-in">
+            <div class="w-full max-w-md">
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-100 text-indigo-600 mb-4">
+                        <i class="fa-solid fa-user-shield text-3xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">Instructor Access</h2>
+                    <p class="text-gray-500 mt-2">Login to manage student grades.</p>
+                </div>
+
+                <form id="admin-login-form" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                        <input type="text" id="admin-username" class="block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-indigo-500 focus:border-indigo-500 py-3 px-4 text-gray-900" placeholder="admin" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <input type="password" id="admin-password" class="block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-indigo-500 focus:border-indigo-500 py-3 px-4 text-gray-900" placeholder="admin123" required>
+                    </div>
+
+                    <div id="admin-error-msg" class="hidden bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span>Invalid Credentials. (Try: admin / admin123)</span>
+                    </div>
+
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors cursor-pointer">
+                        Login as Instructor
+                    </button>
+                </form>
+                
+                <div class="mt-6 text-center">
+                    <a href="index.html" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                        &larr; Go to Student Portal
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== ADMIN DASHBOARD SECTION ==================== -->
+        <div id="admin-dashboard-section" class="hidden w-full p-8 fade-in h-full flex flex-col">
+            <!-- School Letterhead -->
+            <div class="text-center border-b-2 border-indigo-600 pb-6 mb-8">
+                <div class="flex flex-col items-center justify-center mb-4">
+                    <div class="w-24 h-24 mb-4 rounded-full overflow-hidden shadow-lg border-2 border-indigo-100 bg-gray-50 flex items-center justify-center">
+                        <img src="logo.png" alt="School Logo" class="w-full h-full object-cover">
+                    </div>
+                    <h1 class="text-3xl md:text-5xl font-serif font-bold text-gray-900 tracking-wide uppercase mb-2">Liberia Excellence Academy</h1>
+                    <p class="text-lg text-gray-800 font-semibold mb-1">123 Tubman Boulevard, Sinkor, Monrovia, Liberia</p>
+                    <p class="text-sm text-gray-500 font-medium italic mb-2">"Knowledge is Power"</p>
+                    <p class="text-sm text-gray-600">Phone: +231 77 123 4567 | Email: info@liberiaexcellence.edu</p>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Instructor Dashboard</h2>
+                    <p class="text-gray-500 text-sm">Manage students and grades</p>
+                </div>
+                <div class="flex gap-3">
+                     <button onclick="openEditModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Add Student
+                    </button>
+                    <button onclick="logout()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer">
+                        <i class="fa-solid fa-right-from-bracket"></i> Logout
+                    </button>
+                </div>
+            </div>
+
+            <!-- Academic Year Config -->
+            <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                    <h3 class="font-bold text-gray-800 text-sm">Academic Session Configuration</h3>
+                    <p class="text-xs text-gray-500">Set the current academic year displayed on student reports.</p>
+                </div>
+                <div class="flex items-center gap-2 w-full md:w-auto">
+                    <input type="text" id="admin-year-input" class="rounded-lg border-gray-300 text-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 w-full md:w-32" placeholder="2023-2024">
+                    <button onclick="updateAcademicYear()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer">
+                        Update
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <div class="text-blue-500 text-sm font-medium">Total Students</div>
+                    <div id="admin-total-students" class="text-2xl font-bold text-gray-800">0</div>
+                </div>
+                <div class="bg-green-50 p-4 rounded-xl border border-green-100">
+                    <div class="text-green-500 text-sm font-medium">Class Average</div>
+                    <div id="admin-class-avg" class="text-2xl font-bold text-gray-800">0%</div>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                    <div class="text-purple-500 text-sm font-medium">Top Performer</div>
+                    <div id="admin-top-student" class="text-xl font-bold text-gray-800 text-truncate">--</div>
+                </div>
+            </div>
+
+            <!-- Top Performers Section -->
+            <div class="bg-white border border-gray-200 rounded-xl p-6 mb-8 shadow-sm">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-yellow-500"></i>
+                        Top 5 Performers
+                    </h3>
+                    <div class="flex items-center gap-2 mt-2 md:mt-0">
+                        <label class="text-sm text-gray-500 font-medium">Select Class:</label>
+                        <select id="top-class-filter" class="text-sm border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2" onchange="renderTopList()">
+                            <!-- Options injected by JS -->
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4" id="top-performers-list">
+                    <!-- Top 5 Cards injected by JS -->
+                </div>
+            </div>
+
+            <!-- Student List Table -->
+            <div class="bg-white border border-gray-200 rounded-xl overflow-hidden flex-1 flex flex-col">
+                <div class="p-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
+                    <h3 class="font-bold text-gray-700">Registered Students</h3>
+                    <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+                            <input type="text" id="student-search" onkeyup="filterStudentList()" placeholder="Search Name or ID..." class="pl-9 text-sm border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 bg-white w-full sm:w-64">
+                        </div>
+                        <button id="toggle-archived-btn" onclick="toggleArchivedView()" class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg font-medium transition-colors cursor-pointer border border-gray-300 whitespace-nowrap">
+                            <i class="fa-solid fa-box-archive"></i> Show Archived
+                        </button>
+                        <div class="flex items-center gap-2">
+                            <select id="class-filter" onchange="filterStudentList()" class="text-sm border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 bg-white min-w-[120px]">
+                                <option value="">All Classes</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-student-list" class="bg-white divide-y divide-gray-200">
+                            <!-- Rows injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== ADMIN EDIT/ADD MODAL ==================== -->
+        <div id="admin-edit-section" class="hidden fixed inset-0 bg-white/95 z-50 p-4 md:p-8 overflow-y-auto fade-in">
+            <div class="max-w-6xl mx-auto bg-white shadow-2xl rounded-xl border border-gray-200 p-6">
+                <div class="flex justify-between items-start mb-6 border-b border-gray-100 pb-4">
+                    <div>
+                        <h2 id="modal-title" class="text-2xl font-bold text-gray-800">Edit Student Grades</h2>
+                        <p id="modal-last-updated" class="text-xs text-gray-500 mt-1"></p>
+                    </div>
+                    <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-700 transition-colors cursor-pointer">
+                        <i class="fa-solid fa-xmark text-2xl"></i>
+                    </button>
+                </div>
+
+                <form id="edit-student-form" class="space-y-6">
+                    <input type="hidden" id="edit-mode" value="add"> 
+                    
+                    <!-- Basic Info -->
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 bg-gray-50 p-4 rounded-lg">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Name</label>
+                            <input type="text" id="edit-name" class="block w-full rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2 px-3" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">ID</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="edit-id" class="block w-full rounded-l border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2 px-3" required>
+                                <button type="button" onclick="generateNewId()" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-2 rounded-r border border-l-0 border-indigo-200 text-xs font-bold uppercase transition-colors" title="Generate Unique ID">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Class</label>
+                            <input type="text" id="edit-class" class="block w-full rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2 px-3" placeholder="e.g. 10A" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Roll</label>
+                            <input type="text" id="edit-roll" class="block w-full rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2 px-3" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Year</label>
+                            <input type="text" id="edit-year" class="block w-full rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2 px-3" placeholder="2023-2024">
+                        </div>
+                        <div class="md:col-span-5">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Principal's Comment</label>
+                            <textarea id="edit-principal-comment" rows="2" class="block w-full rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2 px-3" placeholder="Overall remarks..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-200 pt-4">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-gray-800">Subjects & Period Grades</h3>
+                            <button type="button" onclick="addSubjectRow()" class="text-sm bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full font-medium hover:bg-indigo-100 transition-colors cursor-pointer">
+                                + Add Subject
+                            </button>
+                        </div>
+                        
+                        <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-bold text-gray-500 uppercase min-w-[150px]">Subject Name</th>
+                                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">1st</th>
+                                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">2nd</th>
+                                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">3rd</th>
+                                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase border-l border-gray-200">4th</th>
+                                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">5th</th>
+                                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">6th</th>
+                                        <th class="px-3 py-2 text-left text-xs font-bold text-gray-500 uppercase min-w-[150px]">Comment</th>
+                                        <th class="px-2 py-2"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="subjects-container" class="bg-white divide-y divide-gray-200">
+                                    <!-- Subject rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-6 border-t border-gray-200">
+                        <button type="button" onclick="closeEditModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer">Cancel</button>
+                        <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium shadow-sm transition-colors cursor-pointer">Save Results</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // ================= STATE MANAGEMENT =================
+        let students = [];
+        let academicYear = localStorage.getItem('eduResult_year') || "2023-2024";
+        let currentEditId = null;
+        const API_URL = 'https://online-report-card-frontend.onrender.com/api/students';
+
+        // DOM Elements
+        const mainContainer = document.querySelector('main');
+        const adminLoginForm = document.getElementById('admin-login-form');
+        const editStudentForm = document.getElementById('edit-student-form');
+        const adminErrorMsg = document.getElementById('admin-error-msg');
+
+        // ================= API INTEGRATION =================
+        function apiToApp(student) {
+            // Convert backend schema to frontend structure
+            // Backend: grades array of objects { subject: "Math", p1: 80, ... }
+            // Frontend: subjects array of objects { name: "Math", p1: 80, ... }
+            const subjects = (student.grades || []).map(g => {
+                const s = { ...g, name: g.subject };
+                delete s.subject;
+                return s;
+            });
+
+            return {
+                id: student._id,
+                name: student.name,
+                class: student.className || '',
+                roll: student.rollNumber || '',
+                year: student.academicYear || '',
+                principalComment: student.principalComment || '',
+                isArchived: student.isArchived || false,
+                updatedAt: student.updatedAt,
+                subjects: subjects
+            };
+        }
+
+        function appToApi(student) {
+            // Convert frontend structure to backend schema
+            const grades = student.subjects.map(s => {
+                const g = { ...s, subject: s.name };
+                delete g.name;
+                return g;
+            });
+
+            return {
+                id: student.id,
+                name: student.name,
+                className: student.class,
+                rollNumber: student.roll,
+                academicYear: student.year,
+                principalComment: student.principalComment,
+                isArchived: student.isArchived,
+                grades: grades
+            };
+        }
+
+        async function fetchStudents() {
+            try {
+                const res = await fetch(API_URL);
+                if (!res.ok) throw new Error('Failed to fetch');
+                const data = await res.json();
+                students = data.map(apiToApp);
+                updateAdminDashboard();
+
+                // Check URL params after fetching to auto-open modal
+                const urlParams = new URLSearchParams(window.location.search);
+                const studentId = urlParams.get('studentId');
+                if (studentId) {
+                    const student = students.find(s => s.id === studentId);
+                    if(student) openEditModal(studentId);
+                }
+            } catch (e) {
+                console.error("Error fetching students:", e);
+                alert("Failed to load student data.");
+            }
+        }
+
+        async function saveStudentApi(studentData, isEdit) {
+            const payload = appToApi(studentData);
+            try {
+                const url = isEdit ? `${API_URL}/${studentData.id}` : API_URL;
+                const method = isEdit ? 'PUT' : 'POST';
+                
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.message || 'Save failed');
+                }
+                
+                await fetchStudents(); // Refresh list
+                closeEditModal();
+            } catch (e) {
+                console.error("Error saving student:", e);
+                alert("Error saving student: " + e.message);
+            }
+        }
+
+        async function deleteStudentApi(id) {
+            try {
+                const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Delete failed');
+                await fetchStudents();
+            } catch (e) {
+                console.error("Error deleting student:", e);
+                alert("Failed to delete student.");
+            }
+        }
+
+        // ================= NAVIGATION =================
+        function showSection(sectionId) {
+            ['admin-login-section', 'admin-dashboard-section'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.add('hidden');
+            });
+            
+            document.getElementById(sectionId).classList.remove('hidden');
+
+            if (sectionId === 'admin-login-section') {
+                mainContainer.classList.remove('md:max-w-5xl');
+                mainContainer.classList.add('md:max-w-md');
+            } else {
+                mainContainer.classList.remove('md:max-w-md');
+                mainContainer.classList.add('md:max-w-5xl');
+                if (sectionId === 'admin-dashboard-section') {
+                    document.getElementById('admin-year-input').value = academicYear;
+                    fetchStudents(); // Load data when dashboard opens
+                }
+            }
+        }
+
+        function logout() {
+            adminLoginForm.reset();
+            adminErrorMsg.classList.add('hidden');
+            showSection('admin-login-section');
+        }
+
+        // ================= ACADEMIC YEAR LOGIC =================
+        function updateAcademicYear() {
+            const input = document.getElementById('admin-year-input').value.trim();
+            if (input) {
+                academicYear = input;
+                localStorage.setItem('eduResult_year', academicYear);
+                alert('Academic Year updated to ' + academicYear);
+            }
+        }
+
+        // ================= HELPER FUNCTIONS =================
+        function calculateAvg(...values) {
+            const validValues = values.filter(v => v !== null && v !== undefined && v !== '');
+            if (validValues.length === 0) return null;
+            const sum = validValues.reduce((a, b) => a + b, 0);
+            return sum / validValues.length;
+        }
+
+        function calculateStats(student) {
+            let totalYearlyAvgSum = 0;
+            
+            student.subjects.forEach(sub => {
+                const avg1 = calculateAvg(sub.p1, sub.p2, sub.p3);
+                const avg2 = calculateAvg(sub.p4, sub.p5, sub.p6);
+                
+                let yearly = 0;
+                if (avg1 !== null && avg2 !== null) {
+                    yearly = (avg1 + avg2) / 2;
+                } else if (avg1 !== null) {
+                    yearly = avg1;
+                } else if (avg2 !== null) {
+                    yearly = avg2;
+                }
+                
+                totalYearlyAvgSum += yearly;
+            });
+            
+            const overallPercentage = student.subjects.length > 0 ? (totalYearlyAvgSum / student.subjects.length) : 0;
+            return { percentage: overallPercentage };
+        }
+
+        // ================= ADMIN LOGIC =================
+        adminLoginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const u = document.getElementById('admin-username').value;
+            const p = document.getElementById('admin-password').value;
+
+            if (u === 'admin' && p === 'admin123') {
+                adminErrorMsg.classList.add('hidden');
+                showSection('admin-dashboard-section');
+            } else {
+                adminErrorMsg.classList.remove('hidden');
+            }
+        });
+
+        function updateAdminDashboard() {
+            let totalPercentageSum = 0;
+            let bestStudent = { name: "None", percentage: -1 };
+
+            students.forEach(student => {
+                const stats = calculateStats(student);
+                totalPercentageSum += stats.percentage;
+                
+                if (stats.percentage > bestStudent.percentage) {
+                    bestStudent = { name: student.name, percentage: stats.percentage };
+                }
+            });
+
+            document.getElementById('admin-total-students').textContent = students.length;
+            const avg = students.length > 0 ? (totalPercentageSum / students.length).toFixed(1) : 0;
+            document.getElementById('admin-class-avg').textContent = avg + "%";
+            document.getElementById('admin-top-student').textContent = bestStudent.name;
+
+            updateClassFilterDropdown();
+            filterStudentList();
+            renderTopPerformersSection();
+        }
+
+        function updateClassFilterDropdown() {
+            const filter = document.getElementById('class-filter');
+            const currentVal = filter.value;
+            
+            // Extract unique classes
+            const classes = [...new Set(students.map(s => s.class).filter(c => c))].sort();
+            
+            filter.innerHTML = '<option value="">All Classes</option>';
+            classes.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = c;
+                filter.appendChild(opt);
+            });
+            
+            // Restore selection if possible
+            if (classes.includes(currentVal)) {
+                filter.value = currentVal;
+            }
+        }
+
+        let showArchived = false;
+
+        function toggleArchivedView() {
+            showArchived = !showArchived;
+            const btn = document.getElementById('toggle-archived-btn');
+            if (showArchived) {
+                btn.innerHTML = '<i class="fa-solid fa-users"></i> Show Active Students';
+                btn.classList.add('bg-yellow-100', 'text-yellow-800', 'border-yellow-200');
+                btn.classList.remove('bg-gray-100', 'text-gray-700', 'border-gray-300');
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-box-archive"></i> Show Archived';
+                btn.classList.remove('bg-yellow-100', 'text-yellow-800', 'border-yellow-200');
+                btn.classList.add('bg-gray-100', 'text-gray-700', 'border-gray-300');
+            }
+            filterStudentList();
+        }
+
+        function filterStudentList() {
+            const filterVal = document.getElementById('class-filter').value;
+            const searchVal = document.getElementById('student-search').value.toLowerCase().trim();
+            const tbody = document.getElementById('admin-student-list');
+            tbody.innerHTML = '';
+
+            const filteredStudents = students.filter(s => {
+                const matchesClass = filterVal ? s.class === filterVal : true;
+                const matchesSearch = s.name.toLowerCase().includes(searchVal) || s.id.toLowerCase().includes(searchVal);
+                const matchesArchive = showArchived ? s.isArchived : !s.isArchived;
+                return matchesClass && matchesSearch && matchesArchive;
+            });
+
+            if (filteredStudents.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No students found.</td></tr>';
+                return;
+            }
+
+            filteredStudents.forEach(student => {
+                const stats = calculateStats(student);
+                const row = document.createElement('tr');
+                row.className = "hover:bg-gray-50";
+                const formattedDate = student.updatedAt ? new Date(student.updatedAt).toLocaleString() : 'N/A';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">${student.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${student.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${student.class}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formattedDate}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span class="px-2 py-1 rounded text-xs font-bold ${stats.percentage >= 60 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                            ${stats.percentage.toFixed(1)}%
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        ${!showArchived ? 
+                        `<button onclick="promoteStudent('${student.id}')" class="text-green-600 hover:text-green-900 mr-3 cursor-pointer" title="Promote"><i class="fa-solid fa-arrow-trend-up"></i></button>
+                         <button onclick="openEditModal('${student.id}')" class="text-indigo-600 hover:text-indigo-900 mr-3 cursor-pointer">Edit</button>
+                         <button onclick="archiveStudent('${student.id}')" class="text-orange-500 hover:text-orange-700 mr-3 cursor-pointer" title="Archive"><i class="fa-solid fa-box-archive"></i></button>` 
+                        : 
+                        `<button onclick="restoreStudent('${student.id}')" class="text-green-600 hover:text-green-900 mr-3 cursor-pointer" title="Restore"><i class="fa-solid fa-rotate-left"></i> Restore</button>`
+                        }
+                        <button onclick="deleteStudent('${student.id}')" class="text-red-600 hover:text-red-900 cursor-pointer">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // ================= EDIT/ADD STUDENT LOGIC =================
+        function generateNewId() {
+            // Extract numeric part of IDs if possible, else random
+            const numericIds = students.map(s => {
+                const num = parseInt(s.id);
+                return isNaN(num) ? 0 : num;
+            });
+            
+            let nextId = 1001;
+            if (numericIds.length > 0) {
+                nextId = Math.max(...numericIds) + 1;
+            }
+            
+            document.getElementById('edit-id').value = nextId;
+        }
+
+        function openEditModal(studentId = null) {
+            const modal = document.getElementById('admin-edit-section');
+            const title = document.getElementById('modal-title');
+            const form = document.getElementById('edit-student-form');
+            const container = document.getElementById('subjects-container');
+            const modeInput = document.getElementById('edit-mode');
+            const lastUpdatedEl = document.getElementById('modal-last-updated');
+
+            container.innerHTML = ''; 
+            modal.classList.remove('hidden');
+
+            if (studentId) {
+                currentEditId = studentId;
+                modeInput.value = 'edit';
+                title.textContent = 'Edit Student Results';
+                const student = students.find(s => s.id === studentId);
+
+                document.getElementById('edit-name').value = student.name;
+                document.getElementById('edit-id').value = student.id;
+                document.getElementById('edit-class').value = student.class;
+                document.getElementById('edit-roll').value = student.roll;
+                document.getElementById('edit-year').value = student.year;
+                document.getElementById('edit-principal-comment').value = student.principalComment;
+
+                if (student.updatedAt) {
+                    lastUpdatedEl.textContent = `Last updated: ${new Date(student.updatedAt).toLocaleString()}`;
+                } else {
+                    lastUpdatedEl.textContent = '';
+                }
+                document.getElementById('edit-id').readOnly = true; 
+                document.getElementById('edit-id').classList.add('bg-gray-100');
+
+                student.subjects.forEach(sub => {
+                    addSubjectRow(sub.name, sub);
+                });
+            } else {
+                currentEditId = null;
+                modeInput.value = 'add';
+                title.textContent = 'Add New Student';
+                form.reset();
+                document.getElementById('edit-id').readOnly = false;
+                document.getElementById('edit-id').classList.remove('bg-gray-100');
+                document.getElementById('edit-year').value = academicYear; // Default to global setting
+                lastUpdatedEl.textContent = 'This is a new student record.';
+                document.getElementById('edit-principal-comment').value = '';
+                
+                addSubjectRow('Mathematics');
+                addSubjectRow('Science');
+                addSubjectRow('English');
+                addSubjectRow('History');
+                
+                generateNewId();
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('admin-edit-section').classList.add('hidden');
+        }
+
+        function addSubjectRow(name = '', data = null) {
+            const container = document.getElementById('subjects-container');
+            const tr = document.createElement('tr');
+            
+            // Def values
+            const p1 = data ? (data.p1 === null ? '' : data.p1) : '';
+            const p2 = data ? (data.p2 === null ? '' : data.p2) : '';
+            const p3 = data ? (data.p3 === null ? '' : data.p3) : '';
+            const p4 = data ? (data.p4 === null ? '' : data.p4) : '';
+            const p5 = data ? (data.p5 === null ? '' : data.p5) : '';
+            const p6 = data ? (data.p6 === null ? '' : data.p6) : '';
+            const comment = data ? (data.comment || '') : '';
+
+            tr.innerHTML = `
+                <td class="px-3 py-2">
+                    <input type="text" class="subject-name block w-full rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1 px-2" placeholder="Subject Name" value="${name}" required>
+                </td>
+                <td class="px-1 py-2">
+                    <input type="number" class="p1 block w-full text-center rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1" placeholder="-" value="${p1}">
+                </td>
+                <td class="px-1 py-2">
+                    <input type="number" class="p2 block w-full text-center rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1" placeholder="-" value="${p2}">
+                </td>
+                <td class="px-1 py-2">
+                    <input type="number" class="p3 block w-full text-center rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1" placeholder="-" value="${p3}">
+                </td>
+                <td class="px-1 py-2 border-l border-gray-200">
+                    <input type="number" class="p4 block w-full text-center rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1" placeholder="-" value="${p4}">
+                </td>
+                <td class="px-1 py-2">
+                    <input type="number" class="p5 block w-full text-center rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1" placeholder="-" value="${p5}">
+                </td>
+                <td class="px-1 py-2">
+                    <input type="number" class="p6 block w-full text-center rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1" placeholder="-" value="${p6}">
+                </td>
+                <td class="px-3 py-2">
+                    <input type="text" class="subject-comment block w-full rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1 px-2" placeholder="Optional" value="${comment}">
+                </td>
+                <td class="px-2 py-2 text-center">
+                    <button type="button" onclick="this.closest('tr').remove()" class="text-gray-400 hover:text-red-500 transition-colors">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </td>
+            `;
+            container.appendChild(tr);
+        }
+
+        editStudentForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const mode = document.getElementById('edit-mode').value;
+            const newId = document.getElementById('edit-id').value.trim();
+            
+            const subjectRows = document.querySelectorAll('#subjects-container > tr');
+            const newSubjects = [];
+            
+            const getVal = (row, cls) => {
+                const val = row.querySelector('.' + cls).value;
+                return val === '' ? null : parseFloat(val);
+            };
+
+            subjectRows.forEach(row => {
+                const name = row.querySelector('.subject-name').value;
+                const p1 = getVal(row, 'p1');
+                const p2 = getVal(row, 'p2');
+                const p3 = getVal(row, 'p3');
+                const p4 = getVal(row, 'p4');
+                const p5 = getVal(row, 'p5');
+                const p6 = getVal(row, 'p6');
+                const comment = row.querySelector('.subject-comment').value.trim();
+                newSubjects.push({ name, p1, p2, p3, p4, p5, p6, comment });
+            });
+
+            const studentData = {
+                id: newId,
+                name: document.getElementById('edit-name').value.trim(),
+                class: document.getElementById('edit-class').value.trim(),
+                roll: document.getElementById('edit-roll').value.trim(),
+                year: document.getElementById('edit-year').value.trim(),
+                principalComment: document.getElementById('edit-principal-comment').value.trim(),
+                isArchived: false, // Default to false when editing/adding via modal
+                subjects: newSubjects
+            };
+
+            saveStudentApi(studentData, mode === 'edit');
+        });
+
+        function deleteStudent(id) {
+            if(confirm('Are you sure you want to delete this student record?')) {
+                deleteStudentApi(id);
+            }
+        }
+
+        async function promoteStudent(id) {
+            const student = students.find(s => s.id === id);
+            if (!student) return;
+
+            // Heuristic to guess next academic year
+            let nextYear = "";
+            const currentYear = student.year || academicYear;
+            const yearParts = currentYear.split('-');
+            if (yearParts.length === 2) {
+                const y1 = parseInt(yearParts[0]);
+                const y2 = parseInt(yearParts[1]);
+                if (!isNaN(y1) && !isNaN(y2)) {
+                    nextYear = `${y1 + 1}-${y2 + 1}`;
+                }
+            }
+
+            // Heuristic to guess next class (increment integer part)
+            let nextClass = student.class;
+            const classMatch = student.class.match(/(\d+)/);
+            if (classMatch) {
+                const num = parseInt(classMatch[0]);
+                nextClass = student.class.replace(num, num + 1);
+            }
+
+            const newClass = prompt(`Promote ${student.name}?\n\nCurrent Class: ${student.class}\nCurrent Year: ${currentYear}\n\nEnter New Class:`, nextClass);
+            if (newClass === null) return;
+
+            const newYear = prompt("Enter New Academic Year:", nextYear || "2024-2025");
+            if (newYear === null) return;
+
+            const clearGrades = confirm("Do you want to clear existing grades for the new class?\n(OK = Clear Grades, Cancel = Keep Grades)");
+
+            const updatedStudent = {
+                ...student,
+                class: newClass,
+                year: newYear,
+                subjects: clearGrades ? [] : student.subjects
+            };
+
+            await saveStudentApi(updatedStudent, true);
+        }
+
+        async function archiveStudent(id) {
+            if(confirm('Are you sure you want to archive this student? They will be hidden from the main list.')) {
+                const student = students.find(s => s.id === id);
+                student.isArchived = true;
+                await saveStudentApi(student, true);
+            }
+        }
+
+        async function restoreStudent(id) {
+            if(confirm('Restore this student to the active list?')) {
+                const student = students.find(s => s.id === id);
+                student.isArchived = false;
+                await saveStudentApi(student, true);
+            }
+        }
+
+        // ================= TOP PERFORMERS LOGIC =================
+        function renderTopPerformersSection() {
+            const filter = document.getElementById('top-class-filter');
+            
+            // Get unique classes
+            const classes = [...new Set(students.map(s => s.class))].sort();
+            
+            // Save current selection if exists and still valid
+            const currentSelection = filter.value;
+            
+            filter.innerHTML = '';
+            if (classes.length === 0) {
+                filter.innerHTML = '<option value="">No Classes Found</option>';
+                renderTopList(); 
+                return;
+            }
+
+            classes.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = c;
+                filter.appendChild(opt);
+            });
+
+            // Restore selection or default to first
+            if (currentSelection && classes.includes(currentSelection)) {
+                filter.value = currentSelection;
+            } else {
+                filter.value = classes[0];
+            }
+
+            renderTopList();
+        }
+
+        function renderTopList() {
+            const selectedClass = document.getElementById('top-class-filter').value;
+            const listContainer = document.getElementById('top-performers-list');
+            listContainer.innerHTML = '';
+
+            if (!selectedClass) {
+                listContainer.innerHTML = '<p class="text-gray-500 text-sm col-span-2 md:col-span-5 text-center py-4">No student data available.</p>';
+                return;
+            }
+
+            // Filter and Sort
+            const classStudents = students
+                .filter(s => s.class === selectedClass)
+                .map(s => ({ ...s, stats: calculateStats(s) }))
+                .sort((a, b) => b.stats.percentage - a.stats.percentage)
+                .slice(0, 5);
+
+            if (classStudents.length === 0) {
+                listContainer.innerHTML = '<p class="text-gray-500 text-sm col-span-2 md:col-span-5 text-center py-4">No students found in this class.</p>';
+                return;
+            }
+
+            classStudents.forEach((s, index) => {
+                const colors = [
+                    'bg-yellow-50 text-yellow-800 border-yellow-200 ring-1 ring-yellow-200', 
+                    'bg-gray-50 text-gray-800 border-gray-200 ring-1 ring-gray-200', 
+                    'bg-orange-50 text-orange-800 border-orange-200 ring-1 ring-orange-200'
+                ];
+                const cardStyle = colors[index] || 'bg-white text-indigo-700 border-gray-100 ring-1 ring-gray-100';
+                const medal = index === 0 ? '<i class="fa-solid fa-crown text-yellow-500 text-2xl drop-shadow-sm"></i>' : `<span class="text-xl font-bold text-gray-400">#${index + 1}</span>`;
+                const nameColor = index === 0 ? 'text-gray-900' : 'text-gray-700';
+                
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-xl border ${cardStyle} flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden transition-transform hover:-translate-y-1 duration-300`;
+                card.innerHTML = `
+                    <div class="mb-2">${medal}</div>
+                    <div class="font-bold text-sm truncate w-full ${nameColor}" title="${s.name}">${s.name}</div>
+                    <div class="text-xs opacity-60 mb-2 font-mono">ID: ${s.id}</div>
+                    <div class="text-xl font-extrabold">${s.stats.percentage.toFixed(1)}%</div>
+                `;
+                listContainer.appendChild(card);
+            });
+        }
+        
+        // Initial setup
+        showSection('admin-login-section');
+    </script>
+</body>
+</html>

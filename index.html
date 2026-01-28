@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Cards - Liberia Excellence Academy</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-4xl w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row fade-in h-[500px]">
+        
+        <!-- Left Side: Branding -->
+        <div class="w-full md:w-1/2 bg-indigo-600 p-12 text-white flex flex-col justify-center items-center text-center">
+            <div class="w-24 h-24 mb-6 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <i class="fa-solid fa-graduation-cap text-5xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold mb-2">EduResult Portal</h1>
+            <p class="text-indigo-100 mb-8">Liberia Excellence Academy</p>
+            <p class="text-sm text-indigo-200 leading-relaxed">
+                Welcome to the official grading portal. Select your access portal below to continue.
+            </p>
+        </div>
+
+        <!-- Right Side: Navigation -->
+        <div class="w-full md:w-1/2 p-12 flex flex-col justify-center gap-6 bg-gray-50">
+            <a href="student.html" class="group relative flex items-center p-6 bg-white rounded-xl shadow-sm border border-gray-200 hover:border-indigo-500 hover:shadow-md transition-all duration-300">
+                <div class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                    <i class="fa-regular fa-user text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-lg font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">Student Portal</h3>
+                    <p class="text-sm text-gray-500">View report cards and results</p>
+                </div>
+                <i class="fa-solid fa-chevron-right absolute right-6 text-gray-300 group-hover:text-indigo-500"></i>
+            </a>
+
+            <a href="admin.html" class="group relative flex items-center p-6 bg-white rounded-xl shadow-sm border border-gray-200 hover:border-gray-800 hover:shadow-md transition-all duration-300">
+                <div class="w-12 h-12 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center group-hover:bg-gray-800 group-hover:text-white transition-colors">
+                    <i class="fa-solid fa-user-shield text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-lg font-bold text-gray-800 group-hover:text-gray-800 transition-colors">Instructor Portal</h3>
+                    <p class="text-sm text-gray-500">Manage grades and students</p>
+                </div>
+                <i class="fa-solid fa-chevron-right absolute right-6 text-gray-300 group-hover:text-gray-800"></i>
+            </a>
+            
+            <div class="mt-4 text-center text-xs text-gray-400">
+                &copy; 2024 EduResult System
+            </div>
+        </div>
+    </div>
+</body>
+</html>

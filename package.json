@@ -1,7 +1,7 @@
 {
   "name": "online-report-card-backend",
   "version": "1.0.0",
-  "description": "API for the Online Report Card application.",
+  "description": "Backend for Student Report Card Portal",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -9,9 +9,11 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "mongoose": "^8.4.1"
+    "firebase-admin": "^12.0.0",
+    "mongoose": "^8.2.0"
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "license": "MIT"
 }

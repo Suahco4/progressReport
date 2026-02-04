@@ -62,11 +62,11 @@ const PORT = process.env.PORT || 3000; // Use Render's port or 3000 for local de
 app.use(cors());
 
 // Serve static files (like index.html, style.css, script.js) from the 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname));
 
 // Convenience route: Redirect /admin to /admin.html
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+  res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
 // Add middleware to parse JSON bodies from incoming requests
@@ -189,7 +189,7 @@ app.get('/api/config/firebase', (req, res) => {
 // A catch-all route to send index.html for any other GET request that isn't an API call.
 // This is useful for single-page applications but also good practice here.
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Start the server

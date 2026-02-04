@@ -6,12 +6,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorMessage = document.getElementById('student-error-msg');
     const studentNameInput = document.getElementById('login-student-name');
     const studentIdInput = document.getElementById('login-student-id');
+    const loadingSpinner = document.getElementById('loading-spinner');
 
     // --- State ---
     let currentStudentData = null;
-    const API_BASE_URL = 'https://online-report-card-frontend.onrender.com'; // Deployed backend
+    const API_BASE_URL = 'https://online-report-card-frontend.onrender.com';
+    let inactivityTimer;
+    const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
 
     // --- Functions ---
+
+    /**
+     * Resets the inactivity timer. This is called whenever the user interacts with the page.
+     */
+    function resetInactivityTimer() {
+        clearTimeout(inactivityTimer);
+        // Only run the timer when the report card is visible
+        if (reportSection.classList.contains('active')) {
+            inactivityTimer = setTimeout(() => {
+                alert('You have been logged out due to inactivity.');
+                window.logout();
+            }, INACTIVITY_TIMEOUT);
+        }
+    }
+
+    function setupActivityListeners() {
+        ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+            document.addEventListener(event, resetInactivityTimer, true);
+        });
+    }
 
     /**
      * Handles the login form submission.
@@ -29,6 +52,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Show loading spinner and disable button
+        if (loadingSpinner) loadingSpinner.classList.remove('hidden');
+        const submitBtn = loginForm.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
         try {
             const response = await fetch(`${API_BASE_URL}/api/students/${id}`);
             if (!response.ok) {
@@ -43,11 +71,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             currentStudentData = studentData;
             displayReportCard(currentStudentData);
+            resetInactivityTimer(); // Start the inactivity timer on successful login
 
         } catch (error) {
             errorMessage.textContent = 'Invalid name or ID. Please try again.';
             errorMessage.classList.remove('hidden');
             console.error('Login failed:', error);
+        } finally {
+            // Hide loading spinner and enable button
+            if (loadingSpinner) loadingSpinner.classList.add('hidden');
+            if (submitBtn) submitBtn.disabled = false;
         }
     }
 
@@ -112,10 +145,26 @@ document.addEventListener('DOMContentLoaded', () => {
         let subjectCount = 0;
 
         // Column totals for footer
-        const colTotals = { p1:0, p2:0, p3:0, sem1:0, p4:0, p5:0, p6:0, sem2:0, yearly:0 };
-        const colCounts = { p1:0, p2:0, p3:0, sem1:0, p4:0, p5:0, p6:0, sem2:0, yearly:0 };
+        const colTotals = { p1:0, p2:0, p3:0, exam1:0, sem1:0, p4:0, p5:0, p6:0, exam2:0, sem2:0, yearly:0 };
+        const colCounts = { p1:0, p2:0, p3:0, exam1:0, sem1:0, p4:0, p5:0, p6:0, exam2:0, sem2:0, yearly:0 };
 
         const safeVal = (val) => (val === null || val === undefined || val === '') ? '-' : val;
+
+        const getScoreClass = (val) => {
+            const num = parseFloat(val);
+            if (!isNaN(num) && num < 70) return 'text-red-600 font-bold';
+            return 'text-gray-600';
+        };
+
+        const getAvgClass = (val) => {
+            if (val !== null && val < 70) return 'text-red-600';
+            return 'text-indigo-700';
+        };
+
+        const getYearlyClass = (val) => {
+            if (val !== null && val < 70) return 'text-red-600';
+            return 'text-gray-900';
+        };
 
         grades.forEach(grade => {
             const p1 = parseFloat(grade.p1);
@@ -124,9 +173,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const p4 = parseFloat(grade.p4);
             const p5 = parseFloat(grade.p5);
             const p6 = parseFloat(grade.p6);
+            const exam1 = parseFloat(grade.exam1);
+            const exam2 = parseFloat(grade.exam2);
 
-            const avg1 = calculateAvg(p1, p2, p3);
-            const avg2 = calculateAvg(p4, p5, p6);
+            const avg1 = calculateAvg(p1, p2, p3, exam1);
+            const avg2 = calculateAvg(p4, p5, p6, exam2);
             
             let yearly = null;
             if (avg1 !== null && avg2 !== null) yearly = (avg1 + avg2) / 2;
@@ -141,8 +192,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Accumulate for footer
             const addToTotal = (key, val) => { if(!isNaN(val) && val !== null) { colTotals[key] += val; colCounts[key]++; } };
             addToTotal('p1', p1); addToTotal('p2', p2); addToTotal('p3', p3);
+            addToTotal('exam1', exam1);
             addToTotal('sem1', avg1);
             addToTotal('p4', p4); addToTotal('p5', p5); addToTotal('p6', p6);
+            addToTotal('exam2', exam2);
             addToTotal('sem2', avg2);
             addToTotal('yearly', yearly);
 
@@ -150,39 +203,56 @@ document.addEventListener('DOMContentLoaded', () => {
             row.className = "hover:bg-gray-50 transition-colors";
             row.innerHTML = `
                 <td class="px-4 py-3 text-sm font-medium text-gray-900 sticky left-0 bg-white z-10 shadow-sm border-r border-gray-100">${grade.subject}</td>
-                <td class="px-2 py-3 text-center text-sm text-gray-600">${safeVal(grade.p1)}</td>
-                <td class="px-2 py-3 text-center text-sm text-gray-600">${safeVal(grade.p2)}</td>
-                <td class="px-2 py-3 text-center text-sm text-gray-600">${safeVal(grade.p3)}</td>
-                <td class="px-3 py-3 text-center text-sm font-bold text-indigo-700 bg-indigo-50 border-x border-indigo-100">${avg1 !== null ? avg1.toFixed(1) : '-'}</td>
-                <td class="px-2 py-3 text-center text-sm text-gray-600">${safeVal(grade.p4)}</td>
-                <td class="px-2 py-3 text-center text-sm text-gray-600">${safeVal(grade.p5)}</td>
-                <td class="px-2 py-3 text-center text-sm text-gray-600">${safeVal(grade.p6)}</td>
-                <td class="px-3 py-3 text-center text-sm font-bold text-indigo-700 bg-indigo-50 border-x border-indigo-100">${avg2 !== null ? avg2.toFixed(1) : '-'}</td>
-                <td class="px-3 py-3 text-center text-sm font-bold text-gray-900 bg-gray-100">${yearly !== null ? yearly.toFixed(1) : '-'}</td>
-                <td class="px-3 py-3 text-center text-sm font-bold ${yearly !== null && yearly < 60 ? 'text-red-600' : 'text-green-600'}">${yearly !== null ? getLetterGrade(yearly) : '-'}</td>
+                <td class="px-2 py-3 text-center text-sm ${getScoreClass(grade.p1)}">${safeVal(grade.p1)}</td>
+                <td class="px-2 py-3 text-center text-sm ${getScoreClass(grade.p2)}">${safeVal(grade.p2)}</td>
+                <td class="px-2 py-3 text-center text-sm ${getScoreClass(grade.p3)}">${safeVal(grade.p3)}</td>
+                <td class="px-2 py-3 text-center text-sm ${getScoreClass(grade.exam1)}">${safeVal(grade.exam1)}</td>
+                <td class="px-3 py-3 text-center text-sm font-bold ${getAvgClass(avg1)} bg-indigo-50 border-x border-indigo-100">${avg1 !== null ? avg1.toFixed(1) : '-'}</td>
+                <td class="px-2 py-3 text-center text-sm ${getScoreClass(grade.p4)}">${safeVal(grade.p4)}</td>
+                <td class="px-2 py-3 text-center text-sm ${getScoreClass(grade.p5)}">${safeVal(grade.p5)}</td>
+                <td class="px-2 py-3 text-center text-sm ${getScoreClass(grade.p6)}">${safeVal(grade.p6)}</td>
+                <td class="px-2 py-3 text-center text-sm ${getScoreClass(grade.exam2)}">${safeVal(grade.exam2)}</td>
+                <td class="px-3 py-3 text-center text-sm font-bold ${getAvgClass(avg2)} bg-indigo-50 border-x border-indigo-100">${avg2 !== null ? avg2.toFixed(1) : '-'}</td>
+                <td class="px-3 py-3 text-center text-sm font-bold ${getYearlyClass(yearly)} bg-gray-100">${yearly !== null ? yearly.toFixed(1) : '-'}</td>
+                <td class="px-3 py-3 text-center text-sm font-bold ${yearly !== null && yearly < 70 ? 'text-red-600' : 'text-green-600'}">${yearly !== null ? getLetterGrade(yearly) : '-'}</td>
                 <td class="px-4 py-3 text-sm text-gray-600 italic border-l border-gray-100">${grade.comment || ''}</td>
             `;
             tableBody.appendChild(row);
         });
 
         // Footer Averages
-        const setFooter = (id, key) => {
+        const setFooter = (id, key, defaultColor = '') => {
             const el = document.getElementById(id);
             if (colCounts[key] > 0) {
-                el.textContent = (colTotals[key] / colCounts[key]).toFixed(1);
+                const avg = colTotals[key] / colCounts[key];
+                el.textContent = avg.toFixed(1);
+                
+                if (avg < 70) {
+                    el.classList.add('text-red-600');
+                    if (defaultColor) el.classList.remove(defaultColor);
+                } else {
+                    el.classList.remove('text-red-600');
+                    if (defaultColor) el.classList.add(defaultColor);
+                }
             } else {
                 el.textContent = '-';
+                el.classList.remove('text-red-600');
+                if (defaultColor) el.classList.add(defaultColor);
             }
         };
 
         setFooter('avg-p1', 'p1'); setFooter('avg-p2', 'p2'); setFooter('avg-p3', 'p3');
-        setFooter('avg-sem1', 'sem1');
+        setFooter('avg-exam1', 'exam1');
+        setFooter('avg-sem1', 'sem1', 'text-indigo-600');
         setFooter('avg-p4', 'p4'); setFooter('avg-p5', 'p5'); setFooter('avg-p6', 'p6');
-        setFooter('avg-sem2', 'sem2');
-        setFooter('avg-yearly', 'yearly');
+        setFooter('avg-exam2', 'exam2');
+        setFooter('avg-sem2', 'sem2', 'text-indigo-600');
+        setFooter('avg-yearly', 'yearly', 'text-gray-800');
 
         const finalAvg = subjectCount > 0 ? (totalYearlyAvg / subjectCount) : 0;
+
         finalPercentageEl.textContent = finalAvg.toFixed(1) + '%';
+        finalPercentageEl.className = `px-3 py-3 text-center font-bold bg-gray-100 ${finalAvg >= 70 ? 'text-indigo-700' : 'text-red-600'}`;
         overallBadge.textContent = getLetterGrade(finalAvg);
         overallBadge.className = `text-2xl font-bold ${finalAvg >= 60 ? 'text-indigo-700' : 'text-red-600'}`;
 
@@ -192,6 +262,9 @@ document.addEventListener('DOMContentLoaded', () => {
      * Handles the logout process.
      */
     window.logout = function() {
+        // Stop the inactivity timer
+        clearTimeout(inactivityTimer);
+
         // Clear state and form inputs
         currentStudentData = null;
         loginForm.reset();
@@ -208,4 +281,5 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     // --- Event Listeners ---
     loginForm.addEventListener('submit', handleLogin);
+    setupActivityListeners(); // Start listening for user activity
 });

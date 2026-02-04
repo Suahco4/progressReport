@@ -35,11 +35,23 @@
             background: #a1a1aa; 
         }
     </style>
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="shortcut icon" href="favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="EduResult" />
+    <link rel="manifest" href="site.webmanifest" />
+    <!-- Firebase SDKs (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
     <!-- Header -->
-    <header class="w-full max-w-5xl flex justify-between items-center mb-6">
+    <header id="main-header" class="w-full max-w-5xl flex justify-between items-center mb-6 transition-all duration-300">
         <div class="flex items-center gap-3 text-indigo-600">
             <i class="fa-solid fa-graduation-cap text-3xl md:text-4xl"></i>
             <h1 class="text-xl md:text-2xl font-bold text-gray-800">EduResult<span class="text-indigo-600">Portal</span></h1>
@@ -65,8 +77,8 @@
 
                 <form id="admin-login-form" class="space-y-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
-                        <input type="text" id="admin-username" class="block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-indigo-500 focus:border-indigo-500 py-3 px-4 text-gray-900" placeholder="admin" required>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" id="admin-email" class="block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-indigo-500 focus:border-indigo-500 py-3 px-4 text-gray-900" placeholder="admin@example.com" required>
                     </div>
 
                     <div>
@@ -74,13 +86,18 @@
                         <input type="password" id="admin-password" class="block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-indigo-500 focus:border-indigo-500 py-3 px-4 text-gray-900" placeholder="admin123" required>
                     </div>
 
-                    <div id="admin-error-msg" class="hidden bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-center gap-2">
-                        <i class="fa-solid fa-circle-exclamation"></i>
-                        <span>Invalid Credentials. (Try: admin / admin123)</span>
+                    <div class="flex justify-end">
+                        <button type="button" onclick="openForgotModal()" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium cursor-pointer">Forgot Password?</button>
                     </div>
 
-                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors cursor-pointer">
-                        Login as Instructor
+                    <div id="admin-error-msg" class="hidden bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span id="login-error-text">Invalid Credentials.</span>
+                    </div>
+
+                    <button type="submit" id="admin-login-btn" class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed">
+                        <i id="login-spinner" class="fa-solid fa-circle-notch fa-spin hidden mr-2"></i>
+                        <span>Login as Instructor</span>
                     </button>
                 </form>
                 
@@ -93,48 +110,59 @@
         </div>
 
         <!-- ==================== ADMIN DASHBOARD SECTION ==================== -->
-        <div id="admin-dashboard-section" class="hidden w-full p-8 fade-in h-full flex flex-col">
-            <!-- School Letterhead -->
-            <div class="text-center border-b-2 border-indigo-600 pb-6 mb-8">
-                <div class="flex flex-col items-center justify-center mb-4">
-                    <div class="w-24 h-24 mb-4 rounded-full overflow-hidden shadow-lg border-2 border-indigo-100 bg-gray-50 flex items-center justify-center">
-                        <img src="logo.png" alt="School Logo" class="w-full h-full object-cover">
+        <div id="admin-dashboard-section" class="hidden w-full h-full flex flex-col md:flex-row fade-in overflow-hidden bg-gray-50">
+            
+            <!-- Sidebar -->
+            <aside class="w-full md:w-64 bg-gray-900 text-gray-300 flex flex-col flex-shrink-0">
+                <div class="p-6 flex items-center gap-3 text-white font-bold text-xl border-b border-gray-800">
+                    <i class="fa-solid fa-graduation-cap"></i> EduResult
+                </div>
+                <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                    <button class="w-full flex items-center gap-3 px-4 py-3 bg-indigo-600 text-white rounded-lg transition-colors text-left shadow-lg shadow-indigo-900/20">
+                        <i class="fa-solid fa-chart-pie w-5 text-center"></i> <span class="font-medium">Overview</span>
+                    </button>
+                    <button onclick="document.getElementById('student-search').focus()" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-800 hover:text-white rounded-lg transition-colors text-left">
+                        <i class="fa-solid fa-users w-5 text-center"></i> <span class="font-medium">Students</span>
+                    </button>
+                    <button onclick="openEditModal()" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-800 hover:text-white rounded-lg transition-colors text-left">
+                        <i class="fa-solid fa-user-plus w-5 text-center"></i> <span class="font-medium">Add Student</span>
+                    </button>
+                    <button onclick="openChartModal('grade')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-800 hover:text-white rounded-lg transition-colors text-left">
+                        <i class="fa-solid fa-chart-bar w-5 text-center"></i> <span class="font-medium">Grade Distribution</span>
+                    </button>
+                    <button onclick="openChartModal('passfail')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-800 hover:text-white rounded-lg transition-colors text-left">
+                        <i class="fa-solid fa-chart-pie w-5 text-center"></i> <span class="font-medium">Pass vs Fail</span>
+                    </button>
+                </nav>
+                <div class="p-4 border-t border-gray-800 bg-gray-900/50">
+                    <div class="mb-4">
+                        <label class="text-xs font-bold text-gray-500 uppercase block mb-2">Academic Year</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="admin-year-input" class="bg-gray-800 border border-gray-700 text-white text-xs rounded px-3 py-2 w-full focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="2023-2024">
+                            <button onclick="updateAcademicYear()" class="text-xs bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-500 transition-colors cursor-pointer"><i class="fa-solid fa-check"></i></button>
+                        </div>
                     </div>
-                    <h1 class="text-3xl md:text-5xl font-serif font-bold text-gray-900 tracking-wide uppercase mb-2">Liberia Excellence Academy</h1>
-                    <p class="text-lg text-gray-800 font-semibold mb-1">123 Tubman Boulevard, Sinkor, Monrovia, Liberia</p>
-                    <p class="text-sm text-gray-500 font-medium italic mb-2">"Knowledge is Power"</p>
-                    <p class="text-sm text-gray-600">Phone: +231 77 123 4567 | Email: info@liberiaexcellence.edu</p>
+                    <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-900/20 hover:text-red-400 rounded-lg transition-colors text-left group">
+                        <i class="fa-solid fa-right-from-bracket w-5 text-center group-hover:text-red-400 transition-colors"></i> <span class="font-medium">Logout</span>
+                    </button>
                 </div>
-            </div>
+            </aside>
 
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-800">Instructor Dashboard</h2>
-                    <p class="text-gray-500 text-sm">Manage students and grades</p>
+            <!-- Main Content Area -->
+            <div class="flex-1 flex flex-col h-full overflow-hidden relative">
+                <!-- Top Bar -->
+                <div class="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Dashboard</h2>
+                        <p class="text-gray-500 text-sm">Welcome back, Instructor</p>
+                    </div>
+                    <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shadow-sm">
+                        <i class="fa-solid fa-user-tie text-lg"></i>
+                    </div>
                 </div>
-                <div class="flex gap-3">
-                     <button onclick="openEditModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer flex items-center gap-2">
-                        <i class="fa-solid fa-plus"></i> Add Student
-                    </button>
-                    <button onclick="logout()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer">
-                        <i class="fa-solid fa-right-from-bracket"></i> Logout
-                    </button>
-                </div>
-            </div>
 
-            <!-- Academic Year Config -->
-            <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div>
-                    <h3 class="font-bold text-gray-800 text-sm">Academic Session Configuration</h3>
-                    <p class="text-xs text-gray-500">Set the current academic year displayed on student reports.</p>
-                </div>
-                <div class="flex items-center gap-2 w-full md:w-auto">
-                    <input type="text" id="admin-year-input" class="rounded-lg border-gray-300 text-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 w-full md:w-32" placeholder="2023-2024">
-                    <button onclick="updateAcademicYear()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer">
-                        Update
-                    </button>
-                </div>
-            </div>
+                <!-- Scrollable Content -->
+                <div class="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
 
             <!-- Stats Overview -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -181,9 +209,19 @@
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><i class="fa-solid fa-magnifying-glass"></i></span>
                             <input type="text" id="student-search" onkeyup="filterStudentList()" placeholder="Search Name or ID..." class="pl-9 text-sm border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 bg-white w-full sm:w-64">
                         </div>
-                        <button id="toggle-archived-btn" onclick="toggleArchivedView()" class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg font-medium transition-colors cursor-pointer border border-gray-300 whitespace-nowrap">
-                            <i class="fa-solid fa-box-archive"></i> Show Archived
-                        </button>
+                        <div class="relative">
+                            <button onclick="document.getElementById('action-menu').classList.toggle('hidden')" class="text-sm bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-lg font-medium transition-colors cursor-pointer border border-gray-300 whitespace-nowrap shadow-sm flex items-center gap-2">
+                                <i class="fa-solid fa-ellipsis"></i> Actions
+                            </button>
+                            <div id="action-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200 py-1">
+                                <button onclick="exportToCSV(); document.getElementById('action-menu').classList.add('hidden')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                    <i class="fa-solid fa-file-csv text-green-600"></i> Export CSV
+                                </button>
+                                <button id="toggle-archived-btn" onclick="toggleArchivedView(); document.getElementById('action-menu').classList.add('hidden')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                    <i class="fa-solid fa-box-archive text-gray-500"></i> Show Archived
+                                </button>
+                            </div>
+                        </div>
                         <div class="flex items-center gap-2">
                             <select id="class-filter" onchange="filterStudentList()" class="text-sm border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 bg-white min-w-[120px]">
                                 <option value="">All Classes</option>
@@ -207,6 +245,8 @@
                             <!-- Rows injected by JS -->
                         </tbody>
                     </table>
+                </div>
+            </div>
                 </div>
             </div>
         </div>
@@ -276,9 +316,13 @@
                                         <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">1st</th>
                                         <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">2nd</th>
                                         <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">3rd</th>
+                                        <th class="px-2 py-2 text-center text-xs font-medium text-indigo-600 uppercase bg-indigo-50">1st Sem</th>
+                                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-600 uppercase bg-gray-50">Avg</th>
                                         <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase border-l border-gray-200">4th</th>
                                         <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">5th</th>
                                         <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">6th</th>
+                                        <th class="px-2 py-2 text-center text-xs font-medium text-indigo-600 uppercase bg-indigo-50">2nd Sem</th>
+                                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-600 uppercase bg-gray-50">Avg</th>
                                         <th class="px-3 py-2 text-left text-xs font-bold text-gray-500 uppercase min-w-[150px]">Comment</th>
                                         <th class="px-2 py-2"></th>
                                     </tr>
@@ -298,13 +342,77 @@
             </div>
         </div>
 
+        <!-- ==================== CHART MODAL ==================== -->
+        <div id="chart-modal" class="hidden fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50 fade-in flex items-center justify-center">
+            <div class="relative p-6 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-xl bg-white">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="chart-modal-title" class="text-lg font-bold text-gray-900">Chart</h3>
+                    <button onclick="closeChartModal()" class="text-gray-400 hover:text-gray-700 cursor-pointer">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+                <div class="relative h-96 w-full flex justify-center">
+                    <canvas id="modalChartCanvas"></canvas>
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <button onclick="downloadChart()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors cursor-pointer flex items-center gap-2">
+                        <i class="fa-solid fa-download"></i> Download Chart
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== FORGOT PASSWORD MODAL ==================== -->
+        <div id="forgot-password-modal" class="hidden fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50 fade-in flex items-center justify-center">
+            <div class="relative p-5 border w-96 shadow-lg rounded-xl bg-white">
+                <div class="mt-3 text-center">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 mb-4">
+                        <i class="fa-solid fa-key text-indigo-600"></i>
+                    </div>
+                    <h3 class="text-lg leading-6 font-bold text-gray-900">Reset Password</h3>
+                    <div class="mt-2 px-2 py-3">
+                        <p class="text-sm text-gray-500 mb-4">Enter your email address and we'll send you a link to reset your password.</p>
+                        <input type="email" id="reset-email" class="block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-indigo-500 focus:border-indigo-500 py-2 px-3 text-gray-900" placeholder="admin@example.com">
+                        <p id="reset-msg" class="text-xs mt-2 hidden"></p>
+                    </div>
+                    <div class="items-center px-2 py-3 space-y-3">
+                        <button id="send-reset-btn" onclick="sendResetEmail()" class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-lg w-full shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-colors cursor-pointer">Send Reset Link</button>
+                        <button onclick="closeForgotModal()" class="px-4 py-2 bg-gray-100 text-gray-700 text-base font-medium rounded-lg w-full shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors cursor-pointer">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== CONFIRMATION MODAL ==================== -->
+        <div id="confirmation-modal" class="hidden fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50 fade-in flex items-center justify-center">
+            <div class="relative p-5 border w-96 shadow-lg rounded-xl bg-white">
+                <div class="mt-3 text-center">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+                        <i class="fa-solid fa-triangle-exclamation text-yellow-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg leading-6 font-bold text-gray-900" id="confirm-title">Confirm Action</h3>
+                    <div class="mt-2 px-2 py-3">
+                        <p class="text-sm text-gray-500" id="confirm-message">Are you sure?</p>
+                    </div>
+                    <div class="flex justify-center gap-3 mt-4">
+                        <button onclick="closeConfirmModal()" class="px-4 py-2 bg-gray-100 text-gray-700 text-base font-medium rounded-lg shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors cursor-pointer">Cancel</button>
+                        <button onclick="executeConfirmAction()" class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors cursor-pointer">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TOAST CONTAINER ==================== -->
+        <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
     </main>
 
     <script>
         // ================= STATE MANAGEMENT =================
         let students = [];
-        let academicYear = localStorage.getItem('eduResult_year') || "2023-2024";
+        let academicYear = "2023-2024";
         let currentEditId = null;
+        let currentUserUid = null;
         const API_URL = 'https://online-report-card-frontend.onrender.com/api/students';
 
         // DOM Elements
@@ -312,6 +420,36 @@
         const adminLoginForm = document.getElementById('admin-login-form');
         const editStudentForm = document.getElementById('edit-student-form');
         const adminErrorMsg = document.getElementById('admin-error-msg');
+
+        // ================= FIREBASE SETUP =================
+        let auth;
+
+        async function initializeFirebase() {
+            try {
+                const response = await fetch('/api/config/firebase');
+                if (!response.ok) throw new Error('Failed to load Firebase configuration');
+                const firebaseConfig = await response.json();
+
+                firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+
+                // Auth State Listener
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        currentUserUid = user.uid;
+                        showSection('admin-dashboard-section');
+                    } else {
+                        currentUserUid = null;
+                        showSection('admin-login-section');
+                    }
+                });
+            } catch (error) {
+                console.error('Firebase Initialization Error:', error);
+                showToast('Failed to initialize application. Please check configuration.', 'error');
+            }
+        }
+
+        initializeFirebase();
 
         // ================= API INTEGRATION =================
         function apiToApp(student) {
@@ -353,13 +491,20 @@
                 academicYear: student.year,
                 principalComment: student.principalComment,
                 isArchived: student.isArchived,
+                sponsorId: currentUserUid,
                 grades: grades
             };
         }
 
         async function fetchStudents() {
             try {
-                const res = await fetch(API_URL);
+                if (!auth || !auth.currentUser) return;
+                const token = await auth.currentUser.getIdToken();
+                
+                const res = await fetch(API_URL, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
                 if (!res.ok) throw new Error('Failed to fetch');
                 const data = await res.json();
                 students = data.map(apiToApp);
@@ -374,19 +519,25 @@
                 }
             } catch (e) {
                 console.error("Error fetching students:", e);
-                alert("Failed to load student data.");
+                showToast("Failed to load student data.", 'error');
             }
         }
 
         async function saveStudentApi(studentData, isEdit) {
             const payload = appToApi(studentData);
             try {
+                if (!auth || !auth.currentUser) throw new Error("Not authenticated");
+                const token = await auth.currentUser.getIdToken();
+
                 const url = isEdit ? `${API_URL}/${studentData.id}` : API_URL;
                 const method = isEdit ? 'PUT' : 'POST';
                 
                 const res = await fetch(url, {
                     method: method,
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
                     body: JSON.stringify(payload)
                 });
 
@@ -397,25 +548,126 @@
                 
                 await fetchStudents(); // Refresh list
                 closeEditModal();
+                showToast('Student saved successfully!');
             } catch (e) {
                 console.error("Error saving student:", e);
-                alert("Error saving student: " + e.message);
+                showToast("Error saving student: " + e.message, 'error');
             }
         }
 
         async function deleteStudentApi(id) {
             try {
-                const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                if (!auth || !auth.currentUser) throw new Error("Not authenticated");
+                const token = await auth.currentUser.getIdToken();
+
+                const res = await fetch(`${API_URL}/${id}`, { 
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (!res.ok) throw new Error('Delete failed');
                 await fetchStudents();
+                showToast('Student deleted successfully!');
             } catch (e) {
                 console.error("Error deleting student:", e);
-                alert("Failed to delete student.");
+                showToast("Failed to delete student.", 'error');
             }
+        }
+
+        // ================= FORGOT PASSWORD LOGIC =================
+        function openForgotModal() {
+            document.getElementById('forgot-password-modal').classList.remove('hidden');
+            document.getElementById('reset-msg').classList.add('hidden');
+            // Pre-fill email if user typed it in login form
+            const loginEmail = document.getElementById('admin-email').value;
+            if(loginEmail) document.getElementById('reset-email').value = loginEmail;
+        }
+
+        function closeForgotModal() {
+            document.getElementById('forgot-password-modal').classList.add('hidden');
+        }
+
+        function sendResetEmail() {
+            const email = document.getElementById('reset-email').value;
+            const msgEl = document.getElementById('reset-msg');
+            const btn = document.getElementById('send-reset-btn');
+
+            if(!email) {
+                msgEl.textContent = "Please enter an email address.";
+                msgEl.className = "text-xs mt-2 text-red-600 block";
+                msgEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            const originalText = btn.textContent;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Sending...';
+
+            auth.sendPasswordResetEmail(email)
+                .then(() => {
+                    msgEl.textContent = "Reset link sent! Check your inbox.";
+                    msgEl.className = "text-xs mt-2 text-green-600 block";
+                    msgEl.classList.remove('hidden');
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> Sent';
+                    setTimeout(() => {
+                        closeForgotModal();
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                    }, 2000);
+                })
+                .catch((error) => {
+                    msgEl.textContent = error.message;
+                    msgEl.className = "text-xs mt-2 text-red-600 block";
+                    msgEl.classList.remove('hidden');
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                });
+        }
+
+        // ================= CONFIRMATION MODAL LOGIC =================
+        let onConfirmAction = null;
+
+        function openConfirmModal(title, message, callback) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            onConfirmAction = callback;
+            document.getElementById('confirmation-modal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmation-modal').classList.add('hidden');
+            onConfirmAction = null;
+        }
+
+        function executeConfirmAction() {
+            if (onConfirmAction) onConfirmAction();
+            closeConfirmModal();
+        }
+
+        // ================= TOAST NOTIFICATION =================
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgClass = 'bg-green-600';
+            let icon = '<i class="fa-solid fa-circle-check"></i>';
+            
+            if (type === 'error') {
+                bgClass = 'bg-red-600';
+                icon = '<i class="fa-solid fa-circle-exclamation"></i>';
+            }
+
+            toast.className = `${bgClass} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 transform transition-all duration-300 translate-y-10 opacity-0 min-w-[300px] pointer-events-auto`;
+            toast.innerHTML = `${icon} <span class="font-medium text-sm">${message}</span>`;
+
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => toast.classList.remove('translate-y-10', 'opacity-0'));
+            setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-10'); setTimeout(() => toast.remove(), 300); }, 3000);
         }
 
         // ================= NAVIGATION =================
         function showSection(sectionId) {
+            const header = document.getElementById('main-header');
             ['admin-login-section', 'admin-dashboard-section'].forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.classList.add('hidden');
@@ -424,9 +676,11 @@
             document.getElementById(sectionId).classList.remove('hidden');
 
             if (sectionId === 'admin-login-section') {
+                if(header) header.classList.remove('hidden');
                 mainContainer.classList.remove('md:max-w-5xl');
                 mainContainer.classList.add('md:max-w-md');
             } else {
+                if(header) header.classList.add('hidden');
                 mainContainer.classList.remove('md:max-w-md');
                 mainContainer.classList.add('md:max-w-5xl');
                 if (sectionId === 'admin-dashboard-section') {
@@ -437,18 +691,19 @@
         }
 
         function logout() {
-            adminLoginForm.reset();
-            adminErrorMsg.classList.add('hidden');
-            showSection('admin-login-section');
+            auth.signOut().then(() => {
+                adminLoginForm.reset();
+                adminErrorMsg.classList.add('hidden');
+                // showSection handled by onAuthStateChanged
+            }).catch(e => alert(e.message));
         }
 
         // ================= ACADEMIC YEAR LOGIC =================
-        function updateAcademicYear() {
+        async function updateAcademicYear() {
             const input = document.getElementById('admin-year-input').value.trim();
             if (input) {
                 academicYear = input;
-                localStorage.setItem('eduResult_year', academicYear);
-                alert('Academic Year updated to ' + academicYear);
+                showToast('Academic Year updated locally to ' + academicYear);
             }
         }
 
@@ -464,8 +719,8 @@
             let totalYearlyAvgSum = 0;
             
             student.subjects.forEach(sub => {
-                const avg1 = calculateAvg(sub.p1, sub.p2, sub.p3);
-                const avg2 = calculateAvg(sub.p4, sub.p5, sub.p6);
+                const avg1 = calculateAvg(sub.p1, sub.p2, sub.p3, sub.exam1);
+                const avg2 = calculateAvg(sub.p4, sub.p5, sub.p6, sub.exam2);
                 
                 let yearly = 0;
                 if (avg1 !== null && avg2 !== null) {
@@ -486,14 +741,42 @@
         // ================= ADMIN LOGIC =================
         adminLoginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const u = document.getElementById('admin-username').value;
+            const email = document.getElementById('admin-email').value;
             const p = document.getElementById('admin-password').value;
+            if (!auth) return; // Wait for init
 
-            if (u === 'admin' && p === 'admin123') {
-                adminErrorMsg.classList.add('hidden');
+            const btn = document.getElementById('admin-login-btn');
+            const spinner = document.getElementById('login-spinner');
+            
+            btn.disabled = true;
+            spinner.classList.remove('hidden');
+
+            auth.signInWithEmailAndPassword(email, p)
+                .then((userCredential) => {
+                    // Signed in 
+                    adminErrorMsg.classList.add('hidden');
+                    // showSection handled by onAuthStateChanged
+                    btn.disabled = false;
+                    spinner.classList.add('hidden');
+                })
+                .catch((error) => {
+                    btn.disabled = false;
+                    spinner.classList.add('hidden');
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+                    document.getElementById('login-error-text').textContent = errorMessage;
+                    adminErrorMsg.classList.remove('hidden');
+                });
+        });
+
+        // Auth State Listener
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUserUid = user.uid;
                 showSection('admin-dashboard-section');
             } else {
-                adminErrorMsg.classList.remove('hidden');
+                currentUserUid = null;
+                showSection('admin-login-section');
             }
         });
 
@@ -547,13 +830,9 @@
             showArchived = !showArchived;
             const btn = document.getElementById('toggle-archived-btn');
             if (showArchived) {
-                btn.innerHTML = '<i class="fa-solid fa-users"></i> Show Active Students';
-                btn.classList.add('bg-yellow-100', 'text-yellow-800', 'border-yellow-200');
-                btn.classList.remove('bg-gray-100', 'text-gray-700', 'border-gray-300');
+                btn.innerHTML = '<i class="fa-solid fa-users text-indigo-600"></i> Show Active Students';
             } else {
-                btn.innerHTML = '<i class="fa-solid fa-box-archive"></i> Show Archived';
-                btn.classList.remove('bg-yellow-100', 'text-yellow-800', 'border-yellow-200');
-                btn.classList.add('bg-gray-100', 'text-gray-700', 'border-gray-300');
+                btn.innerHTML = '<i class="fa-solid fa-box-archive text-gray-500"></i> Show Archived';
             }
             filterStudentList();
         }
@@ -587,13 +866,14 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${student.class}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formattedDate}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span class="px-2 py-1 rounded text-xs font-bold ${stats.percentage >= 60 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                        <span class="px-2 py-1 rounded text-xs font-bold ${stats.percentage >= 70 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
                             ${stats.percentage.toFixed(1)}%
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         ${!showArchived ? 
                         `<button onclick="promoteStudent('${student.id}')" class="text-green-600 hover:text-green-900 mr-3 cursor-pointer" title="Promote"><i class="fa-solid fa-arrow-trend-up"></i></button>
+                         <button onclick="printStudentReport('${student.id}')" class="text-gray-600 hover:text-gray-900 mr-3 cursor-pointer" title="Print Report"><i class="fa-solid fa-print"></i></button>
                          <button onclick="openEditModal('${student.id}')" class="text-indigo-600 hover:text-indigo-900 mr-3 cursor-pointer">Edit</button>
                          <button onclick="archiveStudent('${student.id}')" class="text-orange-500 hover:text-orange-700 mr-3 cursor-pointer" title="Archive"><i class="fa-solid fa-box-archive"></i></button>` 
                         : 
@@ -689,9 +969,13 @@
             const p1 = data ? (data.p1 === null ? '' : data.p1) : '';
             const p2 = data ? (data.p2 === null ? '' : data.p2) : '';
             const p3 = data ? (data.p3 === null ? '' : data.p3) : '';
+            const exam1 = data ? (data.exam1 === null ? '' : data.exam1) : '';
+            const sem1 = data ? (data.sem1 === null ? '' : data.sem1) : '';
             const p4 = data ? (data.p4 === null ? '' : data.p4) : '';
             const p5 = data ? (data.p5 === null ? '' : data.p5) : '';
             const p6 = data ? (data.p6 === null ? '' : data.p6) : '';
+            const exam2 = data ? (data.exam2 === null ? '' : data.exam2) : '';
+            const sem2 = data ? (data.sem2 === null ? '' : data.sem2) : '';
             const comment = data ? (data.comment || '') : '';
 
             tr.innerHTML = `
@@ -707,6 +991,12 @@
                 <td class="px-1 py-2">
                     <input type="number" class="p3 block w-full text-center rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1" placeholder="-" value="${p3}">
                 </td>
+                <td class="px-1 py-2 bg-indigo-50">
+                    <input type="number" class="exam1 block w-full text-center rounded border-indigo-200 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1 bg-white" placeholder="Ex" value="${exam1}">
+                </td>
+                <td class="px-1 py-2 bg-gray-50">
+                    <input type="number" class="sem1 block w-full text-center rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1 bg-gray-100 text-gray-500 cursor-not-allowed" placeholder="Avg" value="${sem1}" readonly tabindex="-1">
+                </td>
                 <td class="px-1 py-2 border-l border-gray-200">
                     <input type="number" class="p4 block w-full text-center rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1" placeholder="-" value="${p4}">
                 </td>
@@ -715,6 +1005,12 @@
                 </td>
                 <td class="px-1 py-2">
                     <input type="number" class="p6 block w-full text-center rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1" placeholder="-" value="${p6}">
+                </td>
+                <td class="px-1 py-2 bg-indigo-50">
+                    <input type="number" class="exam2 block w-full text-center rounded border-indigo-200 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1 bg-white" placeholder="Ex" value="${exam2}">
+                </td>
+                <td class="px-1 py-2 bg-gray-50">
+                    <input type="number" class="sem2 block w-full text-center rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1 bg-gray-100 text-gray-500 cursor-not-allowed" placeholder="Avg" value="${sem2}" readonly tabindex="-1">
                 </td>
                 <td class="px-3 py-2">
                     <input type="text" class="subject-comment block w-full rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1 px-2" placeholder="Optional" value="${comment}">
@@ -727,6 +1023,31 @@
             `;
             container.appendChild(tr);
         }
+
+        // Auto-calculate averages when inputs change
+        document.getElementById('subjects-container').addEventListener('input', (e) => {
+            if (e.target.tagName === 'INPUT' && e.target.type === 'number') {
+                const row = e.target.closest('tr');
+                const cls = e.target.classList;
+                
+                const getVal = (c) => {
+                    const val = row.querySelector('.' + c).value;
+                    return val === '' ? null : parseFloat(val);
+                };
+
+                // Semester 1 Calculation
+                if (cls.contains('p1') || cls.contains('p2') || cls.contains('p3') || cls.contains('exam1')) {
+                    const avg = calculateAvg(getVal('p1'), getVal('p2'), getVal('p3'), getVal('exam1'));
+                    row.querySelector('.sem1').value = avg !== null ? avg.toFixed(1) : '';
+                }
+
+                // Semester 2 Calculation
+                if (cls.contains('p4') || cls.contains('p5') || cls.contains('p6') || cls.contains('exam2')) {
+                    const avg = calculateAvg(getVal('p4'), getVal('p5'), getVal('p6'), getVal('exam2'));
+                    row.querySelector('.sem2').value = avg !== null ? avg.toFixed(1) : '';
+                }
+            }
+        });
 
         editStudentForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -746,11 +1067,15 @@
                 const p1 = getVal(row, 'p1');
                 const p2 = getVal(row, 'p2');
                 const p3 = getVal(row, 'p3');
+                const exam1 = getVal(row, 'exam1');
+                const sem1 = getVal(row, 'sem1');
                 const p4 = getVal(row, 'p4');
                 const p5 = getVal(row, 'p5');
                 const p6 = getVal(row, 'p6');
+                const exam2 = getVal(row, 'exam2');
+                const sem2 = getVal(row, 'sem2');
                 const comment = row.querySelector('.subject-comment').value.trim();
-                newSubjects.push({ name, p1, p2, p3, p4, p5, p6, comment });
+                newSubjects.push({ name, p1, p2, p3, exam1, sem1, p4, p5, p6, exam2, sem2, comment });
             });
 
             const studentData = {
@@ -768,9 +1093,11 @@
         });
 
         function deleteStudent(id) {
-            if(confirm('Are you sure you want to delete this student record?')) {
-                deleteStudentApi(id);
-            }
+            openConfirmModal(
+                'Delete Student',
+                'Are you sure you want to delete this student record? This action cannot be undone.',
+                () => deleteStudentApi(id)
+            );
         }
 
         async function promoteStudent(id) {
@@ -816,19 +1143,287 @@
         }
 
         async function archiveStudent(id) {
-            if(confirm('Are you sure you want to archive this student? They will be hidden from the main list.')) {
-                const student = students.find(s => s.id === id);
-                student.isArchived = true;
-                await saveStudentApi(student, true);
-            }
+            openConfirmModal(
+                'Archive Student',
+                'Are you sure you want to archive this student? They will be hidden from the main list.',
+                async () => {
+                    const student = students.find(s => s.id === id);
+                    if (student) {
+                        student.isArchived = true;
+                        await saveStudentApi(student, true);
+                    }
+                }
+            );
         }
 
         async function restoreStudent(id) {
-            if(confirm('Restore this student to the active list?')) {
-                const student = students.find(s => s.id === id);
-                student.isArchived = false;
-                await saveStudentApi(student, true);
+            openConfirmModal(
+                'Restore Student',
+                'Restore this student to the active list?',
+                async () => {
+                    const student = students.find(s => s.id === id);
+                    if (student) {
+                        student.isArchived = false;
+                        await saveStudentApi(student, true);
+                    }
+                }
+            );
+        }
+
+        // ================= EXPORT & PRINT LOGIC =================
+        function exportToCSV() {
+            // Define headers
+            const headers = ["ID", "Name", "Class", "Roll", "Academic Year", "Percentage", "Principal Comment"];
+            
+            const rows = [headers];
+            
+            students.forEach(s => {
+                const stats = calculateStats(s);
+                // Escape quotes
+                const escape = (val) => `"${(val || '').toString().replace(/"/g, '""')}"`;
+                
+                rows.push([
+                    escape(s.id),
+                    escape(s.name),
+                    escape(s.class),
+                    escape(s.roll),
+                    escape(s.year),
+                    escape(stats.percentage.toFixed(2) + '%'),
+                    escape(s.principalComment)
+                ]);
+            });
+            
+            const csvContent = "data:text/csv;charset=utf-8," 
+                + rows.map(e => e.join(",")).join("\n");
+                
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "students_export.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function printStudentReport(id) {
+            const student = students.find(s => s.id === id);
+            if (!student) return;
+
+            const stats = calculateStats(student);
+            
+            // Helper for grades
+            const getGrade = (score) => {
+                if (score >= 90) return 'A';
+                if (score >= 80) return 'B';
+                if (score >= 70) return 'C';
+                return 'F';
+            };
+            
+            const safeVal = (v) => (v === null || v === undefined || v === '') ? '-' : v;
+
+            let rowsHtml = '';
+            student.subjects.forEach(sub => {
+                const avg1 = calculateAvg(sub.p1, sub.p2, sub.p3, sub.exam1);
+                const avg2 = calculateAvg(sub.p4, sub.p5, sub.p6, sub.exam2);
+                let yearly = null;
+                if (avg1 !== null && avg2 !== null) yearly = (avg1 + avg2) / 2;
+                else if (avg1 !== null) yearly = avg1;
+                else if (avg2 !== null) yearly = avg2;
+                
+                rowsHtml += `
+                    <tr>
+                        <td class="border px-4 py-2">${sub.name}</td>
+                        <td class="border px-2 py-2 text-center">${safeVal(sub.p1)}</td>
+                        <td class="border px-2 py-2 text-center">${safeVal(sub.p2)}</td>
+                        <td class="border px-2 py-2 text-center">${safeVal(sub.p3)}</td>
+                        <td class="border px-2 py-2 text-center">${safeVal(sub.exam1)}</td>
+                        <td class="border px-2 py-2 text-center font-bold bg-gray-50">${avg1 !== null ? avg1.toFixed(1) : '-'}</td>
+                        <td class="border px-2 py-2 text-center">${safeVal(sub.p4)}</td>
+                        <td class="border px-2 py-2 text-center">${safeVal(sub.p5)}</td>
+                        <td class="border px-2 py-2 text-center">${safeVal(sub.p6)}</td>
+                        <td class="border px-2 py-2 text-center">${safeVal(sub.exam2)}</td>
+                        <td class="border px-2 py-2 text-center font-bold bg-gray-50">${avg2 !== null ? avg2.toFixed(1) : '-'}</td>
+                        <td class="border px-2 py-2 text-center font-bold">${yearly !== null ? yearly.toFixed(1) : '-'}</td>
+                        <td class="border px-2 py-2 text-center">${yearly !== null ? getGrade(yearly) : '-'}</td>
+                        <td class="border px-4 py-2 text-sm italic">${sub.comment || ''}</td>
+                    </tr>
+                `;
+            });
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Report Card - ${student.name}</title>
+                    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"><\/script>
+                </head>
+                <body class="p-8 bg-white">
+                    <div class="max-w-4xl mx-auto border border-gray-300 p-8 rounded-xl">
+                        <div class="text-center border-b-2 border-indigo-600 pb-6 mb-6">
+                             <h1 class="text-3xl font-bold text-gray-900 uppercase">Emmanuel Suah Academy</h1>
+                             <p class="text-gray-600">New Israel Community, Brewerville, Montserrado County, Liberia</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+                            <div><strong>Name:</strong> ${student.name}</div>
+                            <div><strong>ID:</strong> ${student.id}</div>
+                            <div><strong>Class:</strong> ${student.class}</div>
+                            <div><strong>Academic Year:</strong> ${student.year}</div>
+                        </div>
+                        <table class="w-full border-collapse border border-gray-300 text-sm mb-6">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="border px-4 py-2 text-left">Subject</th>
+                                    <th class="border px-2 py-2">1st</th>
+                                    <th class="border px-2 py-2">2nd</th>
+                                    <th class="border px-2 py-2">3rd</th>
+                                    <th class="border px-2 py-2">1st Sem</th>
+                                    <th class="border px-2 py-2">Avg1</th>
+                                    <th class="border px-2 py-2">4th</th>
+                                    <th class="border px-2 py-2">5th</th>
+                                    <th class="border px-2 py-2">6th</th>
+                                    <th class="border px-2 py-2">2nd Sem</th>
+                                    <th class="border px-2 py-2">Avg2</th>
+                                    <th class="border px-2 py-2">Yearly</th>
+                                    <th class="border px-2 py-2">Grade</th>
+                                    <th class="border px-4 py-2 text-left">Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                            <tfoot>
+                                <tr class="bg-gray-50 font-bold">
+                                    <td colspan="9" class="border px-4 py-2 text-right">Overall Percentage:</td>
+                                    <td class="border px-2 py-2 text-center">${stats.percentage.toFixed(1)}%</td>
+                                    <td class="border px-2 py-2 text-center">${getGrade(stats.percentage)}</td>
+                                    <td class="border"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        <div class="mt-8 pt-4 border-t border-gray-200">
+                            <p class="text-sm"><strong>Principal's Remarks:</strong> ${student.principalComment || 'No remarks.'}</p>
+                        </div>
+                    </div>
+                    <script>
+                        setTimeout(() => { window.print(); window.close(); }, 500);
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        // ================= CHART LOGIC =================
+        let currentChartInstance = null;
+
+        function openChartModal(type) {
+            const modal = document.getElementById('chart-modal');
+            const title = document.getElementById('chart-modal-title');
+            const ctx = document.getElementById('modalChartCanvas');
+            
+            modal.classList.remove('hidden');
+            
+            if (currentChartInstance) {
+                currentChartInstance.destroy();
+                currentChartInstance = null;
             }
+
+            if (type === 'grade') {
+                title.textContent = 'Grade Distribution';
+                renderGradeChart(ctx);
+            } else if (type === 'passfail') {
+                title.textContent = 'Pass vs Fail Ratio';
+                renderPassFailChart(ctx);
+            }
+        }
+
+        function closeChartModal() {
+            document.getElementById('chart-modal').classList.add('hidden');
+        }
+
+        function downloadChart() {
+            const canvas = document.getElementById('modalChartCanvas');
+            if (!canvas) return;
+            
+            const title = document.getElementById('chart-modal-title').textContent || 'chart';
+            const filename = title.toLowerCase().replace(/[^a-z0-9]/g, '-') + '.png';
+
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function renderGradeChart(ctx) {
+            const distribution = { 'A': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0 };
+            
+            students.forEach(s => {
+                if (s.isArchived) return; // Only show active students
+                const stats = calculateStats(s);
+                const p = stats.percentage;
+                
+                if (p >= 90) distribution['A']++;
+                else if (p >= 80) distribution['B']++;
+                else if (p >= 70) distribution['C']++;
+                else if (p >= 60) distribution['D']++;
+                else distribution['F']++;
+            });
+
+            const data = {
+                labels: ['A (90-100%)', 'B (80-89%)', 'C (70-79%)', 'D (60-69%)', 'F (<60%)'],
+                datasets: [{
+                    label: 'Students',
+                    data: [distribution.A, distribution.B, distribution.C, distribution.D, distribution.F],
+                    backgroundColor: ['#22c55e', '#3b82f6', '#eab308', '#f97316', '#ef4444'],
+                    borderRadius: 4,
+                    barPercentage: 0.6
+                }]
+            };
+
+            currentChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+
+        function renderPassFailChart(ctx) {
+            let passCount = 0;
+            let failCount = 0;
+
+            students.forEach(s => {
+                if (s.isArchived) return;
+                const stats = calculateStats(s);
+                if (stats.percentage >= 70) passCount++;
+                else failCount++;
+            });
+
+            const data = {
+                labels: ['Pass (>=70%)', 'Fail (<70%)'],
+                datasets: [{
+                    data: [passCount, failCount],
+                    backgroundColor: ['#22c55e', '#ef4444'],
+                    borderWidth: 0
+                }]
+            };
+
+            currentChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
         }
 
         // ================= TOP PERFORMERS LOGIC =================
@@ -910,7 +1505,7 @@
         }
         
         // Initial setup
-        showSection('admin-login-section');
+        // showSection('admin-login-section'); // Handled by onAuthStateChanged
     </script>
 </body>
 </html>

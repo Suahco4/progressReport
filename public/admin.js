@@ -147,7 +147,9 @@ function calculateAndDisplayAverages() {
 }
 
 // --- API Communication Layer ---
-const API_BASE_URL = 'https://online-report-card-frontend.onrender.com'; // Relative path for same-origin deployment
+const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:3000'
+    : 'https://online-report-card-frontend.onrender.com';
 const adminForm = document.getElementById('admin-form');
 const adminMessage = document.getElementById('admin-message');
 
@@ -564,4 +566,32 @@ document.addEventListener('DOMContentLoaded', function() {
     activePeriods = getDefaultPeriods();
     renderFormFromData(); // Initial render with one blank subject
     calculateAndDisplayAverages();
+    initializeFirebase();
 });
+
+async function initializeFirebase() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/config/firebase`);
+        if (!response.ok) {
+            throw new Error('Failed to load Firebase configuration');
+        }
+        const firebaseConfig = await response.json();
+        
+        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+            firebase.auth().onAuthStateChanged((user) => {
+                if (user) {
+                    console.log('User is signed in:', user.uid);
+                } else {
+                    console.log('No user signed in.');
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Firebase Initialization Error:', error);
+        showMessage('System Error: Failed to connect to authentication service.', false);
+    }
+}

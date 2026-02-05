@@ -10,7 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- API Communication Layer ---
     // This should be the URL of your deployed backend server (e.g., from Render).
     // IMPORTANT: Replace this with your actual backend URL once it is deployed.
-    const API_BASE_URL = 'https://online-report-card-frontend.onrender.com'; 
+    const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3000'
+        : 'https://online-report-card-frontend.onrender.com';
 
     let currentStudentData = null; // To store the current student's data
 

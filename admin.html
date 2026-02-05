@@ -413,7 +413,8 @@
         let academicYear = "2023-2024";
         let currentEditId = null;
         let currentUserUid = null;
-        const API_URL = 'https://online-report-card-frontend.onrender.com/api/students';
+        const API_BASE_URL = 'https://progressreport-7jlm.onrender.com';
+        const API_URL = `${API_BASE_URL}/api/students`;
 
         // DOM Elements
         const mainContainer = document.querySelector('main');
@@ -426,7 +427,7 @@
 
         async function initializeFirebase() {
             try {
-                const response = await fetch('/api/config/firebase');
+                const response = await fetch(`${API_BASE_URL}/api/config/firebase`);
                 if (!response.ok) throw new Error('Failed to load Firebase configuration');
                 const firebaseConfig = await response.json();
 
@@ -590,6 +591,13 @@
             const email = document.getElementById('reset-email').value;
             const msgEl = document.getElementById('reset-msg');
             const btn = document.getElementById('send-reset-btn');
+
+            if (!auth) {
+                msgEl.textContent = "System initializing, please wait...";
+                msgEl.className = "text-xs mt-2 text-red-600 block";
+                msgEl.classList.remove('hidden');
+                return;
+            }
 
             if(!email) {
                 msgEl.textContent = "Please enter an email address.";
@@ -767,17 +775,6 @@
                     document.getElementById('login-error-text').textContent = errorMessage;
                     adminErrorMsg.classList.remove('hidden');
                 });
-        });
-
-        // Auth State Listener
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                currentUserUid = user.uid;
-                showSection('admin-dashboard-section');
-            } else {
-                currentUserUid = null;
-                showSection('admin-login-section');
-            }
         });
 
         function updateAdminDashboard() {

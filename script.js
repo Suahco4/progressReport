@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- State ---
     let currentStudentData = null;
-    const API_BASE_URL = 'https://online-report-card-frontend.onrender.com';
+    const API_BASE_URL = ''; // Use relative paths
     let inactivityTimer;
     const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
 

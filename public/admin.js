@@ -147,9 +147,7 @@ function calculateAndDisplayAverages() {
 }
 
 // --- API Communication Layer ---
-const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:3000'
-    : 'https://online-report-card-frontend.onrender.com';
+const API_BASE_URL = ''; // Use relative paths, works for dev and prod
 const adminForm = document.getElementById('admin-form');
 const adminMessage = document.getElementById('admin-message');
 
@@ -166,6 +164,25 @@ async function getStudent(id) {
     const response = await fetch(`${API_BASE_URL}/api/students/${id}`);
     if (!response.ok) {
         throw new Error('Student not found');
+    }
+    return await response.json();
+}
+
+// Function to Fetch ALL students for the logged-in user
+async function fetchStudents() {
+    const token = await getAuthToken();
+    if (!token) {
+        console.warn("fetchStudents called but no auth token found.");
+        throw new Error("Authentication required to fetch students.");
+    }
+
+    const headers = { 'Authorization': `Bearer ${token}` };
+    const response = await fetch(`${API_BASE_URL}/api/students`, { headers });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error fetching students:", response.status, errorText);
+        throw new Error('Failed to fetch students list.');
     }
     return await response.json();
 }
@@ -344,6 +361,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const addRegularPeriodBtn = document.getElementById('add-regular-period-btn');
     const addExamPeriodBtn = document.getElementById('add-exam-period-btn');
     let subjectCounter = 0;
+
+    // Listen for the custom event fired when the student list is fetched
+    document.addEventListener('studentListFetched', (e) => {
+        const students = e.detail;
+        populateStudentListForEditing(students);
+    });
+
+    /**
+     * Populates a datalist for the student ID input to make editing easier.
+     * @param {Array<Object>} students - Array of student objects with _id and name.
+     */
+    function populateStudentListForEditing(students = []) {
+        const editIdInput = document.getElementById('edit-student-id');
+        let datalist = document.getElementById('student-ids-datalist');
+        if (!datalist) {
+            datalist = document.createElement('datalist');
+            datalist.id = 'student-ids-datalist';
+            editIdInput.parentElement.appendChild(datalist);
+        }
+        editIdInput.setAttribute('list', 'student-ids-datalist');
+        datalist.innerHTML = ''; // Clear existing options
+        students.forEach(student => {
+            datalist.innerHTML += `<option value="${student._id}">${student.name}</option>`;
+        });
+    }
 
     // --- Event Listeners ---
     generateIdBtn.addEventListener('click', function() {
@@ -571,22 +613,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function initializeFirebase() {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/config/firebase`);
+        const response = await fetch(`/api/config/firebase`);
         if (!response.ok) {
             throw new Error('Failed to load Firebase configuration');
         }
         const firebaseConfig = await response.json();
-        
+
         if (typeof firebase !== 'undefined' && !firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
 
         if (typeof firebase !== 'undefined' && firebase.auth) {
-            firebase.auth().onAuthStateChanged((user) => {
+            firebase.auth().onAuthStateChanged(async (user) => {
                 if (user) {
-                    console.log('User is signed in:', user.uid);
+                    console.log('User is signed in. Fetching student list.');
+                    try {
+                        const students = await fetchStudents();
+                        // Fire a custom event with the student data so the DOMContentLoaded listener can handle it
+                        document.dispatchEvent(new CustomEvent('studentListFetched', { detail: students }));
+                    } catch (error) {
+                        console.error('Error fetching students after login:', error);
+                        showMessage(error.message, false);
+                    }
                 } else {
-                    console.log('No user signed in.');
+                    console.log('No user signed in. Clearing student list.');
+                    document.dispatchEvent(new CustomEvent('studentListFetched', { detail: [] }));
                 }
             });
         }

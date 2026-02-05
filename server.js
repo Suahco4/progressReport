@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+require('dotenv').config(); // Load environment variables from .env file
 const path = require('path'); // Import the 'path' module
 const mongoose = require('mongoose');
 const admin = require('firebase-admin');
@@ -8,23 +9,30 @@ const admin = require('firebase-admin');
 // IMPORTANT: You must install firebase-admin (npm install firebase-admin)
 // and place your 'serviceAccountKey.json' in the root directory.
 try {
-  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT 
-    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-    : require('./serviceAccountKey.json');
+  let serviceAccount;
+  // 1. Try to load from environment variable (Production/Render)
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  } else {
+    // 2. Fallback to local file (Development)
+    serviceAccount = require('./serviceAccountKey.json');
+  }
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
   });
+  console.log("Firebase Admin initialized successfully.");
 } catch (error) {
-  console.warn("Warning: Firebase Admin not initialized. API protection will fail if serviceAccountKey.json is missing.");
+  console.warn("Warning: Firebase Admin not initialized. API protection will fail.");
+  console.error("Error details:", error.message);
 }
 
   // --- Database Connection ---
 // IMPORTANT: Your connection string should be stored as an environment variable, not here.
-const MONGO_URI = process.env.MONGO_URI || 'YOUR_FALLBACK_CONNECTION_STRING';
+const MONGO_URI = process.env.MONGO_URI;
 
 mongoose.connect(MONGO_URI)
-  .then(() => console.log('Successfully connected to MongoDB Atlas!'))
+  .then(() => console.log('Successfully connected to MongoDB!'))
   .catch(error => console.error('Error connecting to MongoDB:', error));
 
 // --- Mongoose Schema & Model ---
@@ -62,11 +70,16 @@ const PORT = process.env.PORT || 3000; // Use Render's port or 3000 for local de
 app.use(cors());
 
 // Serve static files (like index.html, style.css, script.js) from the 'public' directory
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Convenience route: Redirect /admin to /admin.html
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+// Convenience route: Serve student.html from root if requested
+app.get('/student.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'student.html'));
 });
 
 // Add middleware to parse JSON bodies from incoming requests

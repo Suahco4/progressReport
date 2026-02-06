@@ -136,10 +136,14 @@
                 </nav>
                 <div class="p-4 border-t border-gray-800 bg-gray-900/50">
                     <div class="mb-4">
-                        <label class="text-xs font-bold text-gray-500 uppercase block mb-2">Academic Year</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="admin-year-input" class="bg-gray-800 border border-gray-700 text-white text-xs rounded px-3 py-2 w-full focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="2023-2024">
-                            <button onclick="updateAcademicYear()" class="text-xs bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-500 transition-colors cursor-pointer"><i class="fa-solid fa-check"></i></button>
+                        <label class="text-xs font-bold text-gray-500 uppercase block mb-2">Global Settings</label>
+                        <div class="space-y-2">
+                            <input type="text" id="admin-school-input" class="bg-gray-800 border border-gray-700 text-white text-xs rounded px-3 py-2 w-full focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="School Name">
+                            
+                            <div class="flex gap-2">
+                                <input type="text" id="admin-year-input" class="bg-gray-800 border border-gray-700 text-white text-xs rounded px-3 py-2 w-full focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="Year (e.g. 2023-2024)">
+                                <button onclick="updateSettings()" class="text-xs bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-500 transition-colors cursor-pointer" title="Save Settings"><i class="fa-solid fa-check"></i></button>
+                            </div>
                         </div>
                     </div>
                     <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-900/20 hover:text-red-400 rounded-lg transition-colors text-left group">
@@ -411,6 +415,7 @@
         // ================= STATE MANAGEMENT =================
         let students = [];
         let academicYear = "2023-2024";
+        let schoolName = "Emmanuel Suah Academy";
         let currentEditId = null;
         let currentUserUid = null;
         const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
@@ -443,6 +448,7 @@
                         console.log('Firebase Notification: User signed in', user.uid);
                         currentUserUid = user.uid;
                         showSection('admin-dashboard-section');
+                        fetchSettings();
                     } else {
                         console.log('Firebase Notification: User signed out');
                         currentUserUid = null;
@@ -715,11 +721,54 @@
         }
 
         // ================= ACADEMIC YEAR LOGIC =================
-        async function updateAcademicYear() {
-            const input = document.getElementById('admin-year-input').value.trim();
-            if (input) {
-                academicYear = input;
-                showToast('Academic Year updated locally to ' + academicYear);
+        async function fetchSettings() {
+            try {
+                if (!auth || !auth.currentUser) return;
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch(`${API_BASE_URL}/api/settings`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.academicYear) {
+                        academicYear = data.academicYear;
+                        const yearInput = document.getElementById('admin-year-input');
+                        if (yearInput) yearInput.value = academicYear;
+                    }
+                    if (data.schoolName) {
+                        schoolName = data.schoolName;
+                        const schoolInput = document.getElementById('admin-school-input');
+                        if (schoolInput) schoolInput.value = schoolName;
+                    }
+                }
+            } catch (e) {
+                console.error("Error fetching settings:", e);
+            }
+        }
+
+        async function updateSettings() {
+            const yearInput = document.getElementById('admin-year-input').value.trim();
+            const schoolInput = document.getElementById('admin-school-input').value.trim();
+            
+            if (yearInput || schoolInput) {
+                try {
+                    const token = await auth.currentUser.getIdToken();
+                    const res = await fetch(`${API_BASE_URL}/api/settings`, {
+                        method: 'PUT',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ academicYear: yearInput, schoolName: schoolInput })
+                    });
+                    
+                    if (!res.ok) throw new Error('Failed to save settings');
+                    if (yearInput) academicYear = yearInput;
+                    if (schoolInput) schoolName = schoolInput;
+                    showToast('Settings updated successfully.');
+                } catch (e) {
+                    showToast('Error saving settings: ' + e.message, 'error');
+                }
             }
         }
 

@@ -92,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function displayReportCard(student) {
         // Populate student info
+        if (student.schoolName) document.getElementById('report-school-name').textContent = student.schoolName;
         document.getElementById('display-name').textContent = student.name;
         document.getElementById('display-id').textContent = student._id;
         document.getElementById('display-class').textContent = student.className || 'N/A';

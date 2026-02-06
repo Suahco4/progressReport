@@ -12,7 +12,13 @@ try {
   let serviceAccount;
   // 1. Try to load from environment variable (Production/Render)
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    // Debugging: Log the first few characters to verify content (without exposing secrets)
+    const rawConfig = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+    if (!rawConfig.startsWith('{')) {
+        console.error("ERROR: FIREBASE_SERVICE_ACCOUNT does not start with '{'. It starts with:", rawConfig.substring(0, 10));
+        throw new Error("FIREBASE_SERVICE_ACCOUNT environment variable is not a valid JSON string. Did you paste the email instead of the JSON content?");
+    }
+    serviceAccount = JSON.parse(rawConfig);
   } else {
     // 2. Fallback to local file (Development)
     serviceAccount = require('./serviceAccountKey.json');
@@ -61,6 +67,15 @@ const studentSchema = new mongoose.Schema({
 });
 
 const Student = mongoose.model('Student', studentSchema);
+
+// --- Settings Schema ---
+const settingsSchema = new mongoose.Schema({
+  sponsorId: { type: String, required: true, unique: true },
+  academicYear: { type: String, default: "2023-2024" },
+  schoolName: { type: String, default: "Emmanuel Suah Academy" }
+}, { timestamps: true });
+
+const Settings = mongoose.model('Settings', settingsSchema);
 
 const app = express();
 const PORT = process.env.PORT || 3000; // Use Render's port or 3000 for local dev
@@ -118,9 +133,17 @@ app.get('/api/students', verifyToken, async (req, res) => {
 // API endpoint to GET a single student's data
 app.get('/api/students/:id', async (req, res) => {
   try {
-    const student = await Student.findById(req.params.id);
+    const student = await Student.findById(req.params.id).lean();
     if (!student) {
       return res.status(404).json({ error: 'Student not found' });
+    }
+    
+    // Inject global settings (School Name/Year) from the sponsor
+    if (student.sponsorId) {
+      const settings = await Settings.findOne({ sponsorId: student.sponsorId });
+      if (settings) {
+        if (settings.schoolName) student.schoolName = settings.schoolName;
+      }
     }
     res.json(student);
   } catch (error) {
@@ -184,6 +207,35 @@ app.delete('/api/students/:id', verifyToken, async (req, res) => {
     res.json({ success: true, message: 'Student deleted successfully.' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to delete student.', error: error.message });
+  }
+});
+
+// API endpoint to GET settings
+app.get('/api/settings', verifyToken, async (req, res) => {
+  try {
+    let settings = await Settings.findOne({ sponsorId: req.user.uid });
+    if (!settings) {
+      settings = new Settings({ sponsorId: req.user.uid });
+      await settings.save();
+    }
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+// API endpoint to UPDATE settings
+app.put('/api/settings', verifyToken, async (req, res) => {
+  try {
+    const { academicYear, schoolName } = req.body;
+    const settings = await Settings.findOneAndUpdate(
+      { sponsorId: req.user.uid },
+      { academicYear, schoolName },
+      { new: true, upsert: true }
+    );
+    res.json({ success: true, data: settings });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update settings' });
   }
 });
 

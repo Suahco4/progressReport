@@ -10,7 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- State ---
     let currentStudentData = null;
-    const API_BASE_URL = ''; // Use relative paths
+    const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3000'
+        : 'https://progressreport-7jlm.onrender.com';
     let inactivityTimer;
     const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
 

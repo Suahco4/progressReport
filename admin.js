@@ -302,6 +302,7 @@ adminForm.addEventListener('submit', async (e) => {
 
 // Helper: Show Success/Error Message
 function showMessage(text, isSuccess) {
+    console.log(`Firebase Notification [${isSuccess ? 'Success' : 'Error'}]:`, text);
     adminMessage.textContent = text;
     adminMessage.className = `error ${isSuccess ? 'success' : ''}`;  // Toggle class for green/red
     adminMessage.classList.remove('hidden');

@@ -4,6 +4,8 @@ require('dotenv').config(); // Load environment variables from .env file
 const path = require('path'); // Import the 'path' module
 const mongoose = require('mongoose');
 const admin = require('firebase-admin');
+const nodemailer = require('nodemailer');
+const cron = require('node-cron');
 
 // --- Firebase Admin Setup ---
 // IMPORTANT: You must install firebase-admin (npm install firebase-admin)
@@ -117,7 +119,7 @@ app.get('/superadmin', (req, res) => {
 });
 
 // Add middleware to parse JSON bodies from incoming requests
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increased limit for backup restoration
 
 // --- Authentication Middleware ---
 const verifyToken = async (req, res, next) => {
@@ -202,13 +204,20 @@ app.post('/api/students', verifyToken, async (req, res) => {
 app.put('/api/students/:id', verifyToken, async (req, res) => {
   try {
     const { name, className, rollNumber, schoolName, academicYear, principalComment, isArchived, grades } = req.body;
-    const sponsorId = req.user.uid;
+    
+    const isSuperAdmin = req.user.email && SUPER_ADMINS.includes(req.user.email);
+    const query = { _id: req.params.id };
+    
+    // Prepare update data, filtering out undefined values for partial updates
+    const updateData = { name, className, rollNumber, schoolName, academicYear, principalComment, isArchived, grades };
+    Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
 
-    const updatedStudent = await Student.findOneAndUpdate(
-      { _id: req.params.id, sponsorId: sponsorId }, // Ensure user owns the record
-      { name, className, rollNumber, schoolName, academicYear, principalComment, isArchived, grades, sponsorId },
-      { new: true, runValidators: true } // Return the updated document
-    );
+    if (!isSuperAdmin) {
+      query.sponsorId = req.user.uid;
+      updateData.sponsorId = req.user.uid; // Ensure ownership is maintained by instructor
+    }
+
+    const updatedStudent = await Student.findOneAndUpdate(query, updateData, { new: true, runValidators: true });
 
     if (!updatedStudent) {
       return res.status(404).json({ success: false, message: 'Student not found' });
@@ -223,10 +232,15 @@ app.put('/api/students/:id', verifyToken, async (req, res) => {
 // API endpoint to DELETE a student
 app.delete('/api/students/:id', verifyToken, async (req, res) => {
   try {
-    const deletedStudent = await Student.findOneAndDelete({ 
-      _id: req.params.id, 
-      sponsorId: req.user.uid // Ensure user owns the record
-    });
+    const isSuperAdmin = req.user.email && SUPER_ADMINS.includes(req.user.email);
+    const query = { _id: req.params.id };
+    
+    // If not super admin, restrict deletion to own students
+    if (!isSuperAdmin) {
+      query.sponsorId = req.user.uid;
+    }
+
+    const deletedStudent = await Student.findOneAndDelete(query);
 
     if (!deletedStudent) {
       return res.status(404).json({ success: false, message: 'Student not found' });
@@ -325,6 +339,21 @@ app.post('/api/student/activity', async (req, res) => {
   } catch (error) {
     console.error('Student logging error:', error);
     res.status(500).json({ error: 'Failed to log student activity' });
+  }
+});
+
+// Endpoint to fetch ALL students (For Super Admin)
+app.get('/api/admin/students', verifyToken, async (req, res) => {
+  try {
+    // Security Check: Ensure the user is a Super Admin
+    if (!req.user.email || !SUPER_ADMINS.includes(req.user.email)) {
+      return res.status(403).json({ error: 'Access Denied: You are not a Super Admin.' });
+    }
+
+    const students = await Student.find().lean();
+    res.json(students);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch students' });
   }
 });
 
@@ -502,6 +531,121 @@ app.post('/api/instructors/:uid/reset-password', verifyToken, async (req, res) =
   } catch (error) {
     console.error('Generate reset link error:', error);
     res.status(500).json({ error: 'Failed to generate reset link' });
+  }
+});
+
+// Endpoint to BACKUP database (For Super Admin)
+app.get('/api/backup', verifyToken, async (req, res) => {
+  try {
+    if (!req.user.email || !SUPER_ADMINS.includes(req.user.email)) {
+      return res.status(403).json({ error: 'Access Denied' });
+    }
+
+    const students = await Student.find().lean();
+    const settings = await Settings.find().lean();
+    const logs = await Log.find().lean();
+
+    const backupData = {
+      timestamp: new Date(),
+      version: "1.0",
+      data: { students, settings, logs }
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename=backup-${new Date().toISOString().slice(0,10)}.json`);
+    res.json(backupData);
+  } catch (error) {
+    console.error('Backup error:', error);
+    res.status(500).json({ error: 'Backup failed' });
+  }
+});
+
+// Endpoint to RESTORE database (For Super Admin)
+app.post('/api/restore', verifyToken, async (req, res) => {
+  try {
+    if (!req.user.email || !SUPER_ADMINS.includes(req.user.email)) {
+      return res.status(403).json({ error: 'Access Denied' });
+    }
+
+    const { data } = req.body;
+    if (!data || !data.students) {
+      return res.status(400).json({ error: 'Invalid backup file format' });
+    }
+
+    // Restore Students (Upsert: Update if exists, Insert if new)
+    if (data.students && data.students.length > 0) {
+      const studentOps = data.students.map(s => ({
+        replaceOne: { filter: { _id: s._id }, replacement: s, upsert: true }
+      }));
+      await Student.bulkWrite(studentOps);
+    }
+
+    // Restore Settings
+    if (data.settings && data.settings.length > 0) {
+      const settingsOps = data.settings.map(s => ({
+        replaceOne: { filter: { _id: s._id }, replacement: s, upsert: true }
+      }));
+      await Settings.bulkWrite(settingsOps);
+    }
+
+    // Note: We typically don't restore logs to avoid overwriting history, 
+    // but you can add logic here if needed.
+
+    res.json({ success: true, message: `Restored ${data.students.length} student records.` });
+  } catch (error) {
+    console.error('Restore error:', error);
+    res.status(500).json({ error: 'Restore failed: ' + error.message });
+  }
+});
+
+// --- Scheduled Tasks ---
+
+// Configure Nodemailer for backups
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
+// Schedule a backup every Sunday at midnight (0 0 * * 0)
+cron.schedule('0 0 * * 0', async () => {
+  console.log('Starting scheduled weekly backup...');
+  try {
+    const students = await Student.find().lean();
+    const settings = await Settings.find().lean();
+    const logs = await Log.find().lean();
+
+    const backupData = {
+      timestamp: new Date(),
+      version: "1.0",
+      data: { students, settings, logs }
+    };
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: SUPER_ADMINS.join(','),
+      subject: `Weekly Backup - ${new Date().toDateString()}`,
+      text: 'Attached is the automated weekly backup of your database.',
+      attachments: [{
+        filename: `backup-${new Date().toISOString().split('T')[0]}.json`,
+        content: JSON.stringify(backupData, null, 2)
+      }]
+    };
+
+    await transporter.sendMail(mailOptions);
+    
+    // Log the event
+    await Log.create({
+      action: 'SYSTEM_BACKUP',
+      details: 'Weekly automated backup sent via email',
+      userType: 'SYSTEM',
+      instructorEmail: 'system@scheduler'
+    });
+    console.log('Weekly backup email sent.');
+  } catch (error) {
+    console.error('Scheduled backup failed:', error);
   }
 });
 

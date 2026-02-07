@@ -14,6 +14,8 @@
     <!-- Firebase SDKs (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body class="min-h-screen flex flex-col items-center p-4">
 
@@ -85,6 +87,25 @@
                 <button onclick="viewInstructors()" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium cursor-pointer border-l pl-2 border-gray-300" title="View Instructors">
                     <i class="fa-solid fa-users"></i> Instructors
                 </button>
+                <button onclick="viewAllStudents()" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium cursor-pointer border-l pl-2 border-gray-300" title="View All Students">
+                    <i class="fa-solid fa-graduation-cap"></i> Students
+                </button>
+                <button onclick="openChartModal('grade')" class="text-purple-600 hover:text-purple-800 text-sm font-medium cursor-pointer border-l pl-2 border-gray-300" title="Grade Distribution">
+                    <i class="fa-solid fa-chart-bar"></i> Grades
+                </button>
+                <button onclick="openChartModal('passfail')" class="text-teal-600 hover:text-teal-800 text-sm font-medium cursor-pointer" title="Pass vs Fail">
+                    <i class="fa-solid fa-chart-pie"></i> Pass/Fail
+                </button>
+                
+                <!-- Database Controls -->
+                <button onclick="backupDatabase()" class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer border-l pl-2 border-gray-300" title="Download Backup">
+                    <i class="fa-solid fa-download"></i> Backup
+                </button>
+                <button onclick="triggerRestore()" class="text-orange-600 hover:text-orange-800 text-sm font-medium cursor-pointer" title="Restore Database">
+                    <i class="fa-solid fa-upload"></i> Restore
+                </button>
+                <input type="file" id="restore-file-input" class="hidden" accept=".json" onchange="restoreDatabase(this)">
+
                 <button onclick="deleteOldLogs()" class="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer border-l pl-2 border-gray-300" title="Delete old logs">
                     <i class="fa-solid fa-trash-can"></i> Cleanup
                 </button>
@@ -194,6 +215,73 @@
             </div>
             <div class="mt-4 flex justify-end">
                 <button onclick="closeInstructorsModal()" class="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition cursor-pointer">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Students List Modal -->
+    <div id="students-modal" class="hidden fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50 fade-in flex items-center justify-center">
+        <div class="relative p-6 border w-11/12 md:w-3/4 shadow-lg rounded-xl bg-white max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-900">All Students Database</h3>
+                <button onclick="closeStudentsModal()" class="text-gray-400 hover:text-gray-700 cursor-pointer">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <div class="mb-4 px-1">
+                <input type="text" id="student-search-input" onkeyup="filterStudents()" placeholder="Search by Name, ID, Class, or School..." class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+            </div>
+            <div class="flex-1 overflow-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50 sticky top-0">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">School</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Rows -->
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination Controls -->
+            <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+                <span class="text-sm text-gray-600" id="student-page-info">Page 1 of 1</span>
+                <div class="flex gap-2">
+                    <button onclick="changeStudentPage(-1)" id="student-prev-btn" class="px-3 py-1 bg-white border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+                    <button onclick="changeStudentPage(1)" id="student-next-btn" class="px-3 py-1 bg-white border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+                </div>
+            </div>
+            <div class="mt-4 flex justify-end">
+                <button onclick="closeStudentsModal()" class="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition cursor-pointer">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Modal -->
+    <div id="chart-modal" class="hidden fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50 fade-in flex items-center justify-center">
+        <div class="relative p-6 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-xl bg-white">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-4">
+                    <h3 id="chart-modal-title" class="text-lg font-bold text-gray-900">Chart</h3>
+                    <select id="chart-class-filter" onchange="updateChartFilter()" class="text-sm border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-1 bg-white">
+                        <option value="">All Classes</option>
+                    </select>
+                </div>
+                <button onclick="closeChartModal()" class="text-gray-400 hover:text-gray-700 cursor-pointer">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <div class="relative h-96 w-full flex justify-center">
+                <canvas id="modalChartCanvas"></canvas>
+            </div>
+            <div class="mt-4 flex justify-end">
+                <button onclick="downloadChart()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors cursor-pointer flex items-center gap-2">
+                    <i class="fa-solid fa-download"></i> Download Chart
+                </button>
             </div>
         </div>
     </div>
@@ -589,6 +677,419 @@
 
         function closeInstructorsModal() {
             document.getElementById('instructors-modal').classList.add('hidden');
+        }
+
+        // ================= STUDENTS MANAGEMENT =================
+        let currentAllStudents = [];
+        let currentFilteredStudents = [];
+        let currentStudentPage = 1;
+        const studentsPerPage = 10;
+
+        async function viewAllStudents() {
+            const tbody = document.getElementById('students-body');
+            document.getElementById('student-search-input').value = ''; // Reset search
+            
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center">
+                        <div class="flex flex-col items-center justify-center">
+                            <i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-600 mb-3"></i>
+                            <span class="text-gray-500 font-medium">Loading students...</span>
+                        </div>
+                    </td>
+                </tr>`;
+            document.getElementById('students-modal').classList.remove('hidden');
+
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch(`${API_BASE_URL}/api/admin/students`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error("Failed to fetch students");
+                currentAllStudents = await res.json();
+                
+                currentStudentPage = 1;
+                renderStudentList(currentAllStudents);
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error: ${error.message}</td></tr>`;
+            }
+        }
+
+        function renderStudentList(students = currentFilteredStudents) {
+            currentFilteredStudents = students;
+            const tbody = document.getElementById('students-body');
+            tbody.innerHTML = '';
+            if (students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No students found.</td></tr>';
+                updateStudentPaginationControls();
+                return;
+            }
+
+            const start = (currentStudentPage - 1) * studentsPerPage;
+            const end = start + studentsPerPage;
+            const paginatedStudents = students.slice(start, end);
+
+            paginatedStudents.forEach(s => {
+                const row = document.createElement('tr');
+                const isArchived = s.isArchived;
+                const archiveBtn = isArchived 
+                    ? `<button onclick="toggleArchiveStudent('${s._id}', false, '${s.name.replace(/'/g, "\\'")}')" class="text-green-600 hover:text-green-900 text-xs font-bold border border-green-200 px-3 py-1 rounded hover:bg-green-50 transition cursor-pointer ml-2">RESTORE</button>`
+                    : `<button onclick="toggleArchiveStudent('${s._id}', true, '${s.name.replace(/'/g, "\\'")}')" class="text-orange-600 hover:text-orange-900 text-xs font-bold border border-orange-200 px-3 py-1 rounded hover:bg-orange-50 transition cursor-pointer ml-2">ARCHIVE</button>`;
+                
+                row.className = "hover:bg-gray-50";
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">${s._id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">${s.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.className || '-'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.schoolName || '-'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <button onclick="deleteStudentSuperAdmin('${s._id}', '${s.name.replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-900 text-xs font-bold border border-red-200 px-3 py-1 rounded hover:bg-red-50 transition cursor-pointer">DELETE</button>
+                        ${archiveBtn}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            updateStudentPaginationControls();
+        }
+
+        function changeStudentPage(delta) {
+            const totalPages = Math.ceil(currentFilteredStudents.length / studentsPerPage) || 1;
+            const newPage = currentStudentPage + delta;
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentStudentPage = newPage;
+                renderStudentList(); 
+            }
+        }
+
+        function updateStudentPaginationControls() {
+            const totalPages = Math.ceil(currentFilteredStudents.length / studentsPerPage) || 1;
+            document.getElementById('student-page-info').textContent = `Page ${currentStudentPage} of ${totalPages}`;
+            document.getElementById('student-prev-btn').disabled = currentStudentPage === 1;
+            document.getElementById('student-next-btn').disabled = currentStudentPage === totalPages;
+        }
+
+        function filterStudents() {
+            const query = document.getElementById('student-search-input').value.toLowerCase();
+            const filtered = currentAllStudents.filter(s => 
+                (s.name && s.name.toLowerCase().includes(query)) ||
+                (s._id && s._id.toLowerCase().includes(query)) ||
+                (s.className && s.className.toLowerCase().includes(query)) ||
+                (s.schoolName && s.schoolName.toLowerCase().includes(query))
+            );
+            currentStudentPage = 1;
+            renderStudentList(filtered);
+        }
+
+        async function deleteStudentSuperAdmin(id, name) {
+            if (!confirm(`SUPER ADMIN ACTION:\n\nAre you sure you want to permanently delete student "${name}" (ID: ${id})?\n\nThis will remove all their grades and records.`)) return;
+            
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch(`${API_BASE_URL}/api/students/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!res.ok) throw new Error("Failed to delete student");
+                
+                // Refresh list
+                viewAllStudents();
+                // Log action implicitly handled by server or we can refresh logs
+                fetchLogs();
+            } catch (error) {
+                alert("Error: " + error.message);
+            }
+        }
+
+        async function toggleArchiveStudent(id, archiveStatus, name) {
+            const action = archiveStatus ? "archive" : "restore";
+            if (!confirm(`SUPER ADMIN ACTION:\n\nAre you sure you want to ${action} student "${name}"?`)) return;
+            
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch(`${API_BASE_URL}/api/students/${id}`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({ isArchived: archiveStatus })
+                });
+                
+                if (!res.ok) throw new Error(`Failed to ${action} student`);
+                
+                viewAllStudents(); // Refresh list
+            } catch (error) {
+                alert("Error: " + error.message);
+            }
+        }
+
+        function closeStudentsModal() {
+            document.getElementById('students-modal').classList.add('hidden');
+        }
+
+        // ================= CHART LOGIC =================
+        let currentChartInstance = null;
+
+        async function ensureStudentsLoaded() {
+            if (currentAllStudents.length === 0) {
+                try {
+                    const token = await auth.currentUser.getIdToken();
+                    const res = await fetch(`${API_BASE_URL}/api/admin/students`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) throw new Error("Failed to fetch students");
+                    currentAllStudents = await res.json();
+                } catch (e) {
+                    alert("Error loading student data for charts: " + e.message);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function calculateAvg(...values) {
+            const validValues = values.filter(v => v !== null && v !== undefined && v !== '');
+            if (validValues.length === 0) return null;
+            const sum = validValues.reduce((a, b) => a + b, 0);
+            return sum / validValues.length;
+        }
+
+        function calculateStats(student) {
+            let totalYearlyAvgSum = 0;
+            const subjects = student.grades || [];
+            
+            subjects.forEach(sub => {
+                const avg1 = calculateAvg(sub.p1, sub.p2, sub.p3, sub.exam1);
+                const avg2 = calculateAvg(sub.p4, sub.p5, sub.p6, sub.exam2);
+                
+                let yearly = 0;
+                if (avg1 !== null && avg2 !== null) {
+                    yearly = (avg1 + avg2) / 2;
+                } else if (avg1 !== null) {
+                    yearly = avg1;
+                } else if (avg2 !== null) {
+                    yearly = avg2;
+                }
+                
+                totalYearlyAvgSum += yearly;
+            });
+            
+            const overallPercentage = subjects.length > 0 ? (totalYearlyAvgSum / subjects.length) : 0;
+            return { percentage: overallPercentage };
+        }
+
+        async function openChartModal(type) {
+            if (!(await ensureStudentsLoaded())) return;
+
+            const modal = document.getElementById('chart-modal');
+            const classFilter = document.getElementById('chart-class-filter');
+            
+            // Populate class filter
+            const classes = [...new Set(currentAllStudents.map(s => s.className).filter(c => c))].sort();
+            classFilter.innerHTML = '<option value="">All Classes</option>';
+            classes.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = c;
+                classFilter.appendChild(opt);
+            });
+            classFilter.value = ""; // Reset to All
+            modal.dataset.chartType = type; // Store type for filter updates
+
+            modal.classList.remove('hidden');
+            
+            if (currentChartInstance) {
+                currentChartInstance.destroy();
+                currentChartInstance = null;
+            }
+
+            renderChart(type);
+        }
+
+        function updateChartFilter() {
+            const modal = document.getElementById('chart-modal');
+            const type = modal.dataset.chartType;
+            if (type) renderChart(type);
+        }
+
+        function renderChart(type) {
+            const ctx = document.getElementById('modalChartCanvas');
+            const title = document.getElementById('chart-modal-title');
+            const filterVal = document.getElementById('chart-class-filter').value;
+            const filteredStudents = filterVal ? currentAllStudents.filter(s => s.className === filterVal) : currentAllStudents;
+
+            if (type === 'grade') {
+                title.textContent = filterVal ? `Grade Distribution (${filterVal})` : 'Grade Distribution (All Students)';
+                renderGradeChart(ctx, filteredStudents);
+            } else if (type === 'passfail') {
+                title.textContent = filterVal ? `Pass vs Fail Ratio (${filterVal})` : 'Pass vs Fail Ratio (All Students)';
+                renderPassFailChart(ctx, filteredStudents);
+            }
+        }
+
+        function closeChartModal() {
+            document.getElementById('chart-modal').classList.add('hidden');
+        }
+
+        function downloadChart() {
+            const canvas = document.getElementById('modalChartCanvas');
+            if (!canvas) return;
+            
+            const title = document.getElementById('chart-modal-title').textContent || 'chart';
+            const filename = title.toLowerCase().replace(/[^a-z0-9]/g, '-') + '.png';
+
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function renderGradeChart(ctx, students) {
+            if (currentChartInstance) {
+                currentChartInstance.destroy();
+            }
+
+            const distribution = { 'A': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0 };
+            
+            students.forEach(s => {
+                if (s.isArchived) return;
+                const stats = calculateStats(s);
+                const p = stats.percentage;
+                
+                if (p >= 90) distribution['A']++;
+                else if (p >= 80) distribution['B']++;
+                else if (p >= 70) distribution['C']++;
+                else if (p >= 60) distribution['D']++;
+                else distribution['F']++;
+            });
+
+            const data = {
+                labels: ['A (90-100%)', 'B (80-89%)', 'C (70-79%)', 'D (60-69%)', 'F (<60%)'],
+                datasets: [{
+                    label: 'Students',
+                    data: [distribution.A, distribution.B, distribution.C, distribution.D, distribution.F],
+                    backgroundColor: ['#22c55e', '#3b82f6', '#eab308', '#f97316', '#ef4444'],
+                    borderRadius: 4,
+                    barPercentage: 0.6
+                }]
+            };
+
+            currentChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+
+        function renderPassFailChart(ctx, students) {
+            if (currentChartInstance) {
+                currentChartInstance.destroy();
+            }
+
+            let passCount = 0;
+            let failCount = 0;
+
+            students.forEach(s => {
+                if (s.isArchived) return;
+                const stats = calculateStats(s);
+                if (stats.percentage >= 70) passCount++;
+                else failCount++;
+            });
+
+            const data = {
+                labels: ['Pass (>=70%)', 'Fail (<70%)'],
+                datasets: [{
+                    data: [passCount, failCount],
+                    backgroundColor: ['#22c55e', '#ef4444'],
+                    borderWidth: 0
+                }]
+            };
+
+            currentChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // ================= DATABASE BACKUP/RESTORE =================
+        async function backupDatabase() {
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch(`${API_BASE_URL}/api/backup`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!res.ok) throw new Error("Backup failed");
+                
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `backup-${new Date().toISOString().slice(0,10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                alert("Error creating backup: " + error.message);
+            }
+        }
+
+        function triggerRestore() {
+            document.getElementById('restore-file-input').click();
+        }
+
+        async function restoreDatabase(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (!confirm("WARNING: This will overwrite existing student data with the data from the backup file. Are you sure you want to proceed?")) {
+                input.value = ''; // Reset input
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const jsonContent = JSON.parse(e.target.result);
+                    const token = await auth.currentUser.getIdToken();
+                    
+                    const res = await fetch(`${API_BASE_URL}/api/restore`, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(jsonContent)
+                    });
+
+                    const result = await res.json();
+                    if (!res.ok) throw new Error(result.error || "Restore failed");
+
+                    alert("Success: " + result.message);
+                    fetchLogs(); // Refresh logs to show potential changes or just to verify connection
+                } catch (error) {
+                    alert("Restore Error: " + error.message);
+                } finally {
+                    input.value = ''; // Reset input
+                }
+            };
+            reader.readAsText(file);
         }
 
         // Forgot Password Logic

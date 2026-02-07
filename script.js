@@ -149,6 +149,15 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function renderGradeTable(grades) {
         const tableBody = document.getElementById('report-grades-body');
+        // Ensure table is wrapped for responsiveness
+        const table = tableBody.closest('table');
+        if (table && !table.parentElement.classList.contains('table-wrapper')) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'table-wrapper';
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+        }
+
         const overallBadge = document.getElementById('overall-grade-badge');
         const finalPercentageEl = document.getElementById('final-percentage');
 

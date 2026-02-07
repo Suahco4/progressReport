@@ -240,6 +240,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const tableHead = document.querySelector('#gradeTable thead');
         const tableBody = document.getElementById('grades-body');
         const tableFoot = document.querySelector('#gradeTable tfoot');
+        
+        // Ensure table is wrapped for responsiveness
+        const table = document.getElementById('gradeTable');
+        if (table && !table.parentElement.classList.contains('table-wrapper')) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'table-wrapper';
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+        }
 
         if (!grades || grades.length === 0) {
             tableHead.innerHTML = '';

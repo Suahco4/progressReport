@@ -115,6 +115,11 @@ button:hover {
     color: #2c3e50;
 }
 
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
 .grades-table {
     width: 100%;
     border-collapse: collapse;

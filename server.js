@@ -246,6 +246,14 @@ app.delete('/api/students/:id', verifyToken, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Student not found' });
     }
 
+    // Log the action
+    await Log.create({
+      instructorId: req.user.uid,
+      instructorEmail: req.user.email || 'Unknown',
+      action: 'DELETE_STUDENT',
+      details: `Deleted student: ${deletedStudent.name} (ID: ${deletedStudent._id})`
+    });
+
     res.json({ success: true, message: 'Student deleted successfully.' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to delete student.', error: error.message });
@@ -369,7 +377,7 @@ app.get('/api/logs', verifyToken, async (req, res) => {
     let query = {};
 
     if (actionType) {
-      query.action = actionType;
+      query.action = actionType.trim();
     }
 
     if (startDate || endDate) {

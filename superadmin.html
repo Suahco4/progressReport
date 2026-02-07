@@ -84,8 +84,10 @@
                     <option value="LOGOUT">Instructor Logout</option>
                     <option value="STUDENT_LOGIN">Student Login</option>
                     <option value="ADD_STUDENT">Add Student</option>
+                    <option value="DELETE_STUDENT">Delete Student</option>
                     <option value="BAN_INSTRUCTOR">Ban Instructor</option>
                     <option value="UNBAN_INSTRUCTOR">Unban Instructor</option>
+                    <option value="GENERATE_RESET_LINK">Generate Reset Link</option>
                     <option value="CLEANUP_LOGS">Cleanup Logs</option>
                     <option value="SYSTEM_BACKUP">System Backup</option>
                 </select>
@@ -239,8 +241,14 @@
                     <i class="fa-solid fa-xmark text-xl"></i>
                 </button>
             </div>
-            <div class="mb-4 px-1">
-                <input type="text" id="student-search-input" onkeyup="filterStudents()" placeholder="Search by Name, ID, Class, or School..." class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+            <div class="mb-4 px-1 flex gap-2">
+                <input type="text" id="student-search-input" onkeyup="filterStudents()" placeholder="Search by Name, ID, Class, or School..." class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                <select id="student-sort-select" onchange="filterStudents()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white cursor-pointer">
+                    <option value="name_asc">Name (A-Z)</option>
+                    <option value="name_desc">Name (Z-A)</option>
+                    <option value="id_asc">ID (Asc)</option>
+                    <option value="id_desc">ID (Desc)</option>
+                </select>
             </div>
             <div class="flex-1 overflow-auto">
                 <table class="min-w-full divide-y divide-gray-200">
@@ -726,6 +734,7 @@
         async function viewAllStudents() {
             const tbody = document.getElementById('students-body');
             document.getElementById('student-search-input').value = ''; // Reset search
+            if(document.getElementById('student-sort-select')) document.getElementById('student-sort-select').value = 'name_asc'; // Reset sort
             
             tbody.innerHTML = `
                 <tr>
@@ -744,12 +753,28 @@
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (!res.ok) throw new Error("Failed to fetch students");
-                currentAllStudents = await res.json();
+                
+                const text = await res.text();
+                try {
+                    currentAllStudents = JSON.parse(text);
+                } catch (e) {
+                    throw new Error("Server returned invalid JSON: " + text.substring(0, 50));
+                }
                 
                 currentStudentPage = 1;
                 renderStudentList(currentAllStudents);
             } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error: ${error.message}</td></tr>`;
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center text-red-500">
+                            <div class="flex flex-col items-center justify-center gap-3">
+                                <p><i class="fa-solid fa-circle-exclamation text-xl mb-2"></i><br>Error: ${error.message}</p>
+                                <button onclick="viewAllStudents()" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer flex items-center gap-2">
+                                    <i class="fa-solid fa-rotate-right"></i> Retry
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`;
             }
         }
 
@@ -808,12 +833,23 @@
 
         function filterStudents() {
             const query = document.getElementById('student-search-input').value.toLowerCase();
-            const filtered = currentAllStudents.filter(s => 
+            const sortValue = document.getElementById('student-sort-select').value;
+
+            let filtered = currentAllStudents.filter(s => 
                 (s.name && s.name.toLowerCase().includes(query)) ||
                 (s._id && s._id.toLowerCase().includes(query)) ||
                 (s.className && s.className.toLowerCase().includes(query)) ||
                 (s.schoolName && s.schoolName.toLowerCase().includes(query))
             );
+
+            filtered.sort((a, b) => {
+                if (sortValue === 'name_asc') return (a.name || '').localeCompare(b.name || '');
+                if (sortValue === 'name_desc') return (b.name || '').localeCompare(a.name || '');
+                if (sortValue === 'id_asc') return (a._id || '').localeCompare(b._id || '', undefined, {numeric: true});
+                if (sortValue === 'id_desc') return (b._id || '').localeCompare(a._id || '', undefined, {numeric: true});
+                return 0;
+            });
+
             currentStudentPage = 1;
             renderStudentList(filtered);
         }
@@ -882,10 +918,25 @@
                     const res = await fetch(`${API_BASE_URL}/api/admin/students`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
+
+                    // Ensure response is JSON before parsing
+                    const contentType = res.headers.get("content-type");
+                    if (!contentType || !contentType.includes("application/json")) {
+                        throw new Error("Server returned non-JSON response (likely HTML error page).");
+                    }
+
                     if (!res.ok) throw new Error("Failed to fetch students");
-                    currentAllStudents = await res.json();
+                    
+                    const text = await res.text();
+                    try {
+                        currentAllStudents = JSON.parse(text);
+                    } catch (e) {
+                        throw new Error("Server returned invalid JSON: " + text.substring(0, 50));
+                    }
                 } catch (e) {
-                    alert("Error loading student data for charts: " + e.message);
+                    if (confirm("Error loading student data for charts: " + e.message + "\n\nDo you want to retry?")) {
+                        return ensureStudentsLoaded();
+                    }
                     return false;
                 }
             }

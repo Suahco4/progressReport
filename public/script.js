@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const semesterAverages = [];
 
         // Find highest and lowest scores for the current subject across all periods
-        const allScores = semesters.flat().map(p => subjectGrade[p.id]).filter(score => typeof score === 'number');
+        const allScores = semesters.flat().map(p => parseFloat(subjectGrade[p.id])).filter(score => !isNaN(score));
         let minScore = -1, maxScore = -1;
         if (allScores.length > 1) { // Only highlight if there's more than one grade to compare
             minScore = Math.min(...allScores);
@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
             semesters.forEach(semesterPeriods => {
-                const semesterScores = semesterPeriods.map(p => subjectGrade[p.id] || 0);
+                const semesterScores = semesterPeriods.map(p => parseFloat(subjectGrade[p.id]) || 0);
                 semesterScores.forEach(score => {
                 let classList = '';
                 if (score < 60) classList += ' failing-score';
@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
         semesters.forEach(semesterPeriods => {
             const periodAverages = [];
             semesterPeriods.forEach(p => {
-                const periodTotal = grades.reduce((sum, current) => sum + (current[p.id] || 0), 0);
+                const periodTotal = grades.reduce((sum, current) => sum + (parseFloat(current[p.id]) || 0), 0);
                 const avg = grades.length > 0 ? periodTotal / grades.length : 0;
                 footerHTML += `<td data-label="${p.name}" class="${avg < 60 ? 'failing-score' : ''}">${formatGrade(avg)}</td>`;
                 periodAverages.push(avg);

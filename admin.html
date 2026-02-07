@@ -161,7 +161,7 @@
                 <div class="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
 
             <!-- Stats Overview -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
                     <div class="text-blue-500 text-sm font-medium">Total Students</div>
                     <div id="admin-total-students" class="text-2xl font-bold text-gray-800">0</div>
@@ -169,6 +169,13 @@
                 <div class="bg-green-50 p-4 rounded-xl border border-green-100">
                     <div class="text-green-500 text-sm font-medium">Class Average</div>
                     <div id="admin-class-avg" class="text-2xl font-bold text-gray-800">0%</div>
+                </div>
+                <div class="bg-orange-50 p-4 rounded-xl border border-orange-100">
+                    <div class="text-orange-500 text-sm font-medium">Pass / Fail</div>
+                    <div class="text-2xl font-bold text-gray-800">
+                        <span id="admin-pass-count" class="text-green-600">0</span> / 
+                        <span id="admin-fail-count" class="text-red-600">0</span>
+                    </div>
                 </div>
                 <div class="bg-purple-50 p-4 rounded-xl border border-purple-100">
                     <div class="text-purple-500 text-sm font-medium">Top Performer</div>
@@ -787,7 +794,9 @@
 
         // ================= HELPER FUNCTIONS =================
         function calculateAvg(...values) {
-            const validValues = values.filter(v => v !== null && v !== undefined && v !== '');
+            const validValues = values
+                .map(v => parseFloat(v))
+                .filter(v => !isNaN(v));
             if (validValues.length === 0) return null;
             const sum = validValues.reduce((a, b) => a + b, 0);
             return sum / validValues.length;
@@ -851,10 +860,15 @@
         function updateAdminDashboard() {
             let totalPercentageSum = 0;
             let bestStudent = { name: "None", percentage: -1 };
+            let passCount = 0;
+            let failCount = 0;
 
             students.forEach(student => {
                 const stats = calculateStats(student);
                 totalPercentageSum += stats.percentage;
+                
+                if (stats.percentage >= 70) passCount++;
+                else failCount++;
                 
                 if (stats.percentage > bestStudent.percentage) {
                     bestStudent = { name: student.name, percentage: stats.percentage };
@@ -865,6 +879,12 @@
             const avg = students.length > 0 ? (totalPercentageSum / students.length).toFixed(1) : 0;
             document.getElementById('admin-class-avg').textContent = avg + "%";
             document.getElementById('admin-top-student').textContent = bestStudent.name;
+            
+            // Update Pass/Fail
+            const passEl = document.getElementById('admin-pass-count');
+            const failEl = document.getElementById('admin-fail-count');
+            if(passEl) passEl.textContent = passCount;
+            if(failEl) failEl.textContent = failCount;
 
             updateClassFilterDropdown();
             filterStudentList();

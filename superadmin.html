@@ -23,7 +23,7 @@
     <header class="w-full max-w-6xl flex justify-between items-center mb-6">
         <div class="flex items-center gap-3 text-gray-800">
             <i class="fa-solid fa-user-secret text-3xl"></i>
-            <h1 class="text-2xl font-bold">Super<span class="text-indigo-600">Admin</span> Monitor</h1>
+            <h1 class="text-2xl font-bold">Super<span class="text-teal-600">Admin</span> Monitor</h1>
         </div>
         <button onclick="logout()" id="logout-btn" class="hidden bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition">
             Logout
@@ -44,11 +44,11 @@
             <form id="login-form" class="space-y-6">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                    <input type="email" id="email" class="block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-indigo-500 focus:border-indigo-500 py-3 px-4 text-gray-900" placeholder="admin@example.com" required>
+                    <input type="email" id="email" class="block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-teal-500 focus:border-teal-500 py-3 px-4 text-gray-900" placeholder="admin@example.com" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                    <input type="password" id="password" class="block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-indigo-500 focus:border-indigo-500 py-3 px-4 text-gray-900" placeholder="••••••••" required>
+                    <input type="password" id="password" class="block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-teal-500 focus:border-teal-500 py-3 px-4 text-gray-900" placeholder="••••••••" required>
                 </div>
                 
                 <div id="error-msg" class="hidden bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-center gap-2">
@@ -57,7 +57,7 @@
                 </div>
 
                 <div class="flex justify-end">
-                    <button type="button" onclick="openForgotModal()" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium cursor-pointer">Forgot Password?</button>
+                    <button type="button" onclick="openForgotModal()" class="text-sm text-teal-600 hover:text-teal-800 font-medium cursor-pointer">Forgot Password?</button>
                 </div>
 
                 <button type="submit" class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors cursor-pointer">
@@ -78,7 +78,7 @@
         <div class="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
             <h2 class="text-lg font-bold text-gray-800">Instructor Activity Logs</h2>
             <div class="flex gap-2 items-center">
-                <select id="action-filter" onchange="fetchLogs()" class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                <select id="action-filter" onchange="fetchLogs()" class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-teal-500 focus:border-teal-500">
                     <option value="">All Actions</option>
                     <option value="LOGIN">Instructor Login</option>
                     <option value="LOGOUT">Instructor Logout</option>
@@ -91,13 +91,13 @@
                     <option value="CLEANUP_LOGS">Cleanup Logs</option>
                     <option value="SYSTEM_BACKUP">System Backup</option>
                 </select>
-                <input type="text" id="search-input" placeholder="Search logs..." class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-indigo-500 focus:border-indigo-500 w-32 md:w-48">
-                <input type="date" id="start-date" class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                <input type="text" id="search-input" placeholder="Search logs..." class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-teal-500 focus:border-teal-500 w-32 md:w-48">
+                <input type="date" id="start-date" class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-teal-500 focus:border-teal-500">
                 <span class="text-gray-400 text-sm">to</span>
-                <input type="date" id="end-date" class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                <button onclick="fetchLogs()" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700 transition mr-2 cursor-pointer">Filter</button>
+                <input type="date" id="end-date" class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-teal-500 focus:border-teal-500">
+                <button onclick="fetchLogs()" class="bg-teal-600 text-white px-3 py-1 rounded text-sm hover:bg-teal-700 transition mr-2 cursor-pointer">Filter</button>
 
-                <button onclick="viewInstructors()" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium cursor-pointer border-l pl-2 border-gray-300" title="View Instructors">
+                <button onclick="viewInstructors()" class="text-teal-600 hover:text-teal-800 text-sm font-medium cursor-pointer border-l pl-2 border-gray-300" title="View Instructors">
                     <i class="fa-solid fa-users"></i> Instructors
                 </button>
                 <!-- Database Controls -->
@@ -115,7 +115,7 @@
                 <button onclick="exportLogsToCSV()" class="text-green-600 hover:text-green-800 text-sm font-medium cursor-pointer">
                     <i class="fa-solid fa-file-csv"></i> Export CSV
                 </button>
-                <button onclick="fetchLogs()" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium cursor-pointer">
+                <button onclick="fetchLogs()" class="text-teal-600 hover:text-teal-800 text-sm font-medium cursor-pointer">
                     <i class="fa-solid fa-rotate"></i> Refresh Logs
                 </button>
             </div>
@@ -152,15 +152,15 @@
         <div class="relative p-6 border w-96 shadow-lg rounded-xl bg-white">
             <div class="text-center">
                 <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 mb-4">
-                    <i class="fa-solid fa-key text-indigo-600"></i>
+                    <i class="fa-solid fa-key text-teal-600"></i>
                 </div>
                 <h3 class="text-lg font-bold text-gray-900">Reset Password</h3>
                 <p class="text-sm text-gray-500 mt-2 mb-4">Enter your email to receive a reset link.</p>
-                <input type="email" id="reset-email" class="block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-indigo-500 focus:border-indigo-500 py-2 px-3 text-gray-900 mb-2" placeholder="admin@example.com">
+                <input type="email" id="reset-email" class="block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-teal-500 focus:border-teal-500 py-2 px-3 text-gray-900 mb-2" placeholder="admin@example.com">
                 <p id="reset-msg" class="text-xs mb-4 hidden"></p>
                 <div class="flex gap-2">
                     <button onclick="closeForgotModal()" class="w-1/2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition cursor-pointer">Cancel</button>
-                    <button onclick="sendResetEmail()" class="w-1/2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition cursor-pointer">Send Link</button>
+                    <button onclick="sendResetEmail()" class="w-1/2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition cursor-pointer">Send Link</button>
                 </div>
             </div>
         </div>
@@ -222,10 +222,27 @@
         </div>
     </div>
 
+    <!-- Restore Confirmation Modal -->
+    <div id="restore-confirm-modal" class="hidden fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50 fade-in flex items-center justify-center">
+        <div class="relative p-6 border w-96 shadow-lg rounded-xl bg-white">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                    <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900">Confirm Database Restore</h3>
+                <p class="text-sm text-gray-500 mt-2 mb-4">WARNING: This action will overwrite all existing student data with the backup file. This cannot be undone.</p>
+                <div class="flex gap-2">
+                    <button onclick="closeRestoreModal()" class="w-1/2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition cursor-pointer">Cancel</button>
+                    <button onclick="executeRestore()" class="w-1/2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition cursor-pointer">Proceed</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Global Loading Spinner -->
     <div id="global-spinner" class="hidden fixed inset-0 bg-gray-900/50 z-[60] flex items-center justify-center fade-in">
         <div class="bg-white p-5 rounded-xl shadow-2xl flex flex-col items-center">
-            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-indigo-600 mb-3"></i>
+            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-teal-600 mb-3"></i>
             <p class="text-gray-700 font-medium" id="global-spinner-text">Processing...</p>
         </div>
     </div>
@@ -275,7 +292,7 @@
                                 auth.signOut();
                             }
                         } catch (err) {
-                            console.error("Auth check failed", err);
+                            // console.error("Auth check failed", err);
                             alert("Authentication check failed.");
                             auth.signOut();
                         }
@@ -286,7 +303,7 @@
                     }
                 });
             } catch (e) {
-                console.error(e);
+                // console.error(e);
                 alert("Failed to initialize system.");
             }
         }
@@ -320,7 +337,7 @@
                 <tr>
                     <td colspan="4" class="px-6 py-12 text-center">
                         <div class="flex flex-col items-center justify-center">
-                            <i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-600 mb-3"></i>
+                            <i class="fa-solid fa-circle-notch fa-spin text-3xl text-teal-600 mb-3"></i>
                             <span class="text-gray-500 font-medium">Loading activity logs...</span>
                         </div>
                     </td>
@@ -533,7 +550,7 @@
                 <tr>
                     <td colspan="5" class="px-6 py-12 text-center">
                         <div class="flex flex-col items-center justify-center">
-                            <i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-600 mb-3"></i>
+                            <i class="fa-solid fa-circle-notch fa-spin text-3xl text-teal-600 mb-3"></i>
                             <span class="text-gray-500 font-medium">Loading instructors...</span>
                         </div>
                     </td>
@@ -673,14 +690,34 @@
             document.getElementById('restore-file-input').click();
         }
 
-        async function restoreDatabase(input) {
+        let pendingRestoreFile = null;
+        let pendingRestoreInput = null;
+
+        function restoreDatabase(input) {
             const file = input.files[0];
             if (!file) return;
+            
+            pendingRestoreFile = file;
+            pendingRestoreInput = input;
+            document.getElementById('restore-confirm-modal').classList.remove('hidden');
+        }
 
-            if (!confirm("WARNING: This will overwrite existing student data with the data from the backup file. Are you sure you want to proceed?")) {
-                input.value = ''; // Reset input
-                return;
+        function closeRestoreModal() {
+            document.getElementById('restore-confirm-modal').classList.add('hidden');
+            if (pendingRestoreInput) {
+                pendingRestoreInput.value = ''; 
             }
+            pendingRestoreFile = null;
+            pendingRestoreInput = null;
+        }
+
+        async function executeRestore() {
+            const file = pendingRestoreFile;
+            const input = pendingRestoreInput;
+            
+            document.getElementById('restore-confirm-modal').classList.add('hidden');
+            
+            if (!file) return;
 
             const reader = new FileReader();
             reader.onload = async (e) => {
@@ -706,8 +743,10 @@
                 } catch (error) {
                     alert("Restore Error: " + error.message);
                 } finally {
-                    input.value = ''; // Reset input
+                    if (input) input.value = ''; 
                     hideLoading();
+                    pendingRestoreFile = null;
+                    pendingRestoreInput = null;
                 }
             };
             reader.readAsText(file);

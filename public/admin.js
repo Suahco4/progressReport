@@ -172,7 +172,7 @@ async function getStudent(id) {
 async function fetchStudents() {
     const token = await getAuthToken();
     if (!token) {
-        console.warn("fetchStudents called but no auth token found.");
+        // console.warn("fetchStudents called but no auth token found.");
         throw new Error("Authentication required to fetch students.");
     }
 
@@ -181,7 +181,7 @@ async function fetchStudents() {
 
     if (!response.ok) {
         const errorText = await response.text();
-        console.error("Error fetching students:", response.status, errorText);
+        // console.error("Error fetching students:", response.status, errorText);
         throw new Error('Failed to fetch students list.');
     }
     return await response.json();
@@ -324,7 +324,7 @@ adminForm.addEventListener('submit', async (e) => {
 
 // Helper: Show Success/Error Message
 function showMessage(text, isSuccess) {
-    console.log(`Firebase Notification [${isSuccess ? 'Success' : 'Error'}]:`, text);
+    // console.log(`Firebase Notification [${isSuccess ? 'Success' : 'Error'}]:`, text);
     adminMessage.textContent = text;
     adminMessage.className = `error ${isSuccess ? 'success' : ''}`;  // Toggle class for green/red
     adminMessage.classList.remove('hidden');
@@ -627,23 +627,23 @@ async function initializeFirebase() {
         if (typeof firebase !== 'undefined' && firebase.auth) {
             firebase.auth().onAuthStateChanged(async (user) => {
                 if (user) {
-                    console.log('User is signed in. Fetching student list.');
+                    // console.log('User is signed in. Fetching student list.');
                     try {
                         const students = await fetchStudents();
                         // Fire a custom event with the student data so the DOMContentLoaded listener can handle it
                         document.dispatchEvent(new CustomEvent('studentListFetched', { detail: students }));
                     } catch (error) {
-                        console.error('Error fetching students after login:', error);
+                        // console.error('Error fetching students after login:', error);
                         showMessage(error.message, false);
                     }
                 } else {
-                    console.log('No user signed in. Clearing student list.');
+                    // console.log('No user signed in. Clearing student list.');
                     document.dispatchEvent(new CustomEvent('studentListFetched', { detail: [] }));
                 }
             });
         }
     } catch (error) {
-        console.error('Firebase Initialization Error:', error);
+        // console.error('Firebase Initialization Error:', error);
         showMessage('System Error: Failed to connect to authentication service.', false);
     }
 }

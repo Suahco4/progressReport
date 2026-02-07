@@ -127,7 +127,7 @@
 
             async function fetchAndDisplayStudents() {
                 try {
-                    const API_BASE_URL = 'https://online-report-card-frontend.onrender.com';
+                    const API_BASE_URL = ''; // Use relative path
                     const response = await fetch(`${API_BASE_URL}/api/students`);
                     if (!response.ok) {
                         throw new Error(`HTTP error! Status: ${response.status}`);

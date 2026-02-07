@@ -365,8 +365,12 @@ app.get('/api/logs', verifyToken, async (req, res) => {
       return res.status(403).json({ error: 'Access Denied: You are not a Super Admin.' });
     }
 
-    const { startDate, endDate, search } = req.query;
+    const { startDate, endDate, search, actionType } = req.query;
     let query = {};
+
+    if (actionType) {
+      query.action = actionType;
+    }
 
     if (startDate || endDate) {
       query.timestamp = {};
@@ -390,7 +394,7 @@ app.get('/api/logs', verifyToken, async (req, res) => {
     }
 
     // Fetch logs, newest first. Increase limit if filtering, otherwise default to 200
-    const limit = (startDate || endDate || search) ? 1000 : 200;
+    const limit = (startDate || endDate || search || actionType) ? 1000 : 200;
     const logs = await Log.find(query).sort({ timestamp: -1 }).limit(limit);
     res.json(logs);
   } catch (error) {
@@ -647,6 +651,12 @@ cron.schedule('0 0 * * 0', async () => {
   } catch (error) {
     console.error('Scheduled backup failed:', error);
   }
+});
+
+// --- 404 Handler for API Routes ---
+// Prevent API 404s from falling through to the catch-all index.html handler
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API endpoint not found' });
 });
 
 // A catch-all route to send index.html for any other GET request that isn't an API call.

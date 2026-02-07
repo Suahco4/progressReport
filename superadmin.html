@@ -314,7 +314,9 @@
     </div>
 
     <script>
-        const API_BASE_URL = ''; // Use relative path
+        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'http://localhost:3000'
+            : 'https://progressreport-7jlm.onrender.com';
 
         let auth;
         let currentLogs = [];
@@ -750,13 +752,6 @@
                 const res = await fetch(`${API_BASE_URL}/api/admin/students`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-
-                // Ensure response is JSON before parsing
-                const contentType = res.headers.get("content-type");
-                if (!contentType || !contentType.includes("application/json")) {
-                    throw new Error(`Server returned non-JSON response (${res.status}). Likely an error page.`);
-                }
-
                 if (!res.ok) throw new Error("Failed to fetch students");
                 
                 const text = await res.text();

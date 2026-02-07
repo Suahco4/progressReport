@@ -418,7 +418,9 @@
         const itemsPerPage = 10;
         let currentEditId = null;
         let currentUserUid = null;
-        const API_BASE_URL = ''; // Use relative path
+        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'http://localhost:3000'
+            : 'https://progressreport-7jlm.onrender.com';
         console.log('API_BASE_URL:', API_BASE_URL);
         const API_URL = `${API_BASE_URL}/api/students`;
 

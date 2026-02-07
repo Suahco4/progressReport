@@ -108,6 +108,11 @@ app.get('/student.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'student.html'));
 });
 
+// Convenience route: Serve superadmin.html
+app.get('/superadmin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'superadmin.html'));
+});
+
 // Add middleware to parse JSON bodies from incoming requests
 app.use(express.json());
 
@@ -274,7 +279,7 @@ app.get('/api/config/firebase', (req, res) => {
 // --- Super Admin / Logging Endpoints ---
 
 // Define allowed super admin emails
-const SUPER_ADMINS = ['admin@example.com', 'principal@school.com']; // <--- Add your emails here
+const SUPER_ADMINS = ['theadmin@gmail.com', 'principal@school.com', 'your-email@example.com']; // <--- Add your emails here
 
 // Endpoint to record client-side activities (Login/Logout)
 app.post('/api/activity', verifyToken, async (req, res) => {

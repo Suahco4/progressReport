@@ -29,20 +29,42 @@
     </header>
 
     <!-- Login Section -->
-    <div id="login-section" class="w-full max-w-md bg-white p-8 rounded-xl shadow-lg fade-in">
-        <h2 class="text-xl font-bold mb-4 text-center">Admin Access</h2>
-        <form id="login-form" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Email</label>
-                <input type="email" id="email" class="w-full border rounded p-2" required>
+    <div id="login-section" class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden fade-in">
+        <div class="p-8">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-900 text-white mb-4">
+                    <i class="fa-solid fa-user-secret text-3xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800">Super Admin Access</h2>
+                <p class="text-gray-500 mt-2">Restricted area. Authorized personnel only.</p>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Password</label>
-                <input type="password" id="password" class="w-full border rounded p-2" required>
+
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                    <input type="email" id="email" class="block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-indigo-500 focus:border-indigo-500 py-3 px-4 text-gray-900" placeholder="admin@example.com" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" id="password" class="block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-indigo-500 focus:border-indigo-500 py-3 px-4 text-gray-900" placeholder="••••••••" required>
+                </div>
+                
+                <div id="error-msg" class="hidden bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span id="error-text">Invalid Credentials.</span>
+                </div>
+
+                <button type="submit" class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors cursor-pointer">
+                    Login to Dashboard
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center">
+                <a href="index.html" class="text-sm text-gray-500 hover:text-gray-900 font-medium">
+                    &larr; Back to Home
+                </a>
             </div>
-            <p id="error-msg" class="text-red-500 text-sm hidden"></p>
-            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">Login</button>
-        </form>
+        </div>
     </div>
 
     <!-- Dashboard Section -->
@@ -164,7 +186,7 @@
         const itemsPerPage = 15;
         
         // Define allowed super admin emails (Must match backend for security)
-        const ALLOWED_ADMINS = ['admin@example.com', 'principal@school.com']; // <--- Add your emails here
+        const ALLOWED_ADMINS = ['theadmin@gmail.com', 'principal@school.com', 'your-email@example.com']; // <--- Add your emails here
 
         // Initialize Firebase
         async function init() {
@@ -205,12 +227,13 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('error-msg');
+            const errorText = document.getElementById('error-text');
 
             try {
                 await auth.signInWithEmailAndPassword(email, password);
                 errorMsg.classList.add('hidden');
             } catch (error) {
-                errorMsg.textContent = "Access Denied: " + error.message;
+                errorText.textContent = "Access Denied: " + error.message;
                 errorMsg.classList.remove('hidden');
             }
         });

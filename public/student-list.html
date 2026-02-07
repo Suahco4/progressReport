@@ -127,7 +127,9 @@
 
             async function fetchAndDisplayStudents() {
                 try {
-                    const API_BASE_URL = 'https://online-report-card-frontend.onrender.com';
+                    const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                        ? 'http://localhost:3000'
+                        : 'https://progressreport-7jlm.onrender.com';
                     const response = await fetch(`${API_BASE_URL}/api/students`);
                     if (!response.ok) {
                         throw new Error(`HTTP error! Status: ${response.status}`);

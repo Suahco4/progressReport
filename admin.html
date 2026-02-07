@@ -120,7 +120,7 @@
                         <i class="fa-solid fa-bars"></i>
                     </button>
                 </div>
-                <div id="sidebar-content" class="hidden md:flex flex-col flex-1 overflow-hidden">
+                <div id="sidebar-content" class="hidden md:flex flex-col flex-1 overflow-hidden h-full">
                 <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
                     <button class="w-full flex items-center gap-3 px-4 py-3 bg-indigo-600 text-white rounded-lg transition-colors text-left shadow-lg shadow-indigo-900/20">
                         <i class="fa-solid fa-chart-pie w-5 text-center"></i> <span class="font-medium">Overview</span>
@@ -726,12 +726,12 @@
 
             if (sectionId === 'admin-login-section') {
                 if(header) header.classList.remove('hidden');
-                mainContainer.classList.remove('md:max-w-5xl');
-                mainContainer.classList.add('md:max-w-md');
+                mainContainer.classList.remove('md:max-w-7xl', 'max-w-full');
+                mainContainer.classList.add('max-w-md');
             } else {
                 if(header) header.classList.add('hidden');
-                mainContainer.classList.remove('md:max-w-md');
-                mainContainer.classList.add('md:max-w-5xl');
+                mainContainer.classList.remove('max-w-md');
+                mainContainer.classList.add('max-w-full', 'md:max-w-7xl');
                 if (sectionId === 'admin-dashboard-section') {
                     document.getElementById('admin-year-input').value = academicYear;
                     fetchStudents(); // Load data when dashboard opens
@@ -818,6 +818,14 @@
                 });
             }
         }
+
+        // Ensure sidebar visibility on resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 768) {
+                const sidebar = document.getElementById('sidebar-content');
+                if (sidebar) sidebar.classList.remove('hidden');
+            }
+        });
 
         // ================= HELPER FUNCTIONS =================
         function calculateAvg(...values) {

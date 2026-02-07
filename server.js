@@ -77,6 +77,17 @@ const settingsSchema = new mongoose.Schema({
 
 const Settings = mongoose.model('Settings', settingsSchema);
 
+// --- Activity Log Schema (For Super Admin) ---
+const logSchema = new mongoose.Schema({
+  instructorId: { type: String, required: true },
+  instructorEmail: { type: String, default: 'Unknown' },
+  action: { type: String, required: true }, // e.g., LOGIN, LOGOUT, ADD_STUDENT
+  details: { type: String },
+  timestamp: { type: Date, default: Date.now }
+});
+
+const Log = mongoose.model('Log', logSchema);
+
 const app = express();
 const PORT = process.env.PORT || 3000; // Use Render's port or 3000 for local dev
 
@@ -164,6 +175,15 @@ app.post('/api/students', verifyToken, async (req, res) => {
     }
     const newStudent = new Student({ _id: id, name, className, rollNumber, schoolName, academicYear, principalComment, isArchived, grades, sponsorId });
     await newStudent.save();
+
+    // Log the action
+    await Log.create({
+      instructorId: sponsorId,
+      instructorEmail: req.user.email || 'Unknown',
+      action: 'ADD_STUDENT',
+      details: `Added student: ${name} (ID: ${id})`
+    });
+
     res.status(201).json({ success: true, message: 'Student added successfully!', data: newStudent });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to add student.', error: error.message });
@@ -249,6 +269,203 @@ app.get('/api/config/firebase', (req, res) => {
     messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.FIREBASE_APP_ID
   });
+});
+
+// --- Super Admin / Logging Endpoints ---
+
+// Define allowed super admin emails
+const SUPER_ADMINS = ['admin@example.com', 'principal@school.com']; // <--- Add your emails here
+
+// Endpoint to record client-side activities (Login/Logout)
+app.post('/api/activity', verifyToken, async (req, res) => {
+  try {
+    const { action, details } = req.body;
+    await Log.create({
+      instructorId: req.user.uid,
+      instructorEmail: req.user.email || 'Unknown',
+      action: action,
+      details: details || ''
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Logging error:', error);
+    res.status(500).json({ error: 'Failed to log activity' });
+  }
+});
+
+// Endpoint to fetch logs (For Super Admin)
+app.get('/api/logs', verifyToken, async (req, res) => {
+  try {
+    // Security Check: Ensure the user is a Super Admin
+    if (!req.user.email || !SUPER_ADMINS.includes(req.user.email)) {
+      return res.status(403).json({ error: 'Access Denied: You are not a Super Admin.' });
+    }
+
+    const { startDate, endDate, search } = req.query;
+    let query = {};
+
+    if (startDate || endDate) {
+      query.timestamp = {};
+      if (startDate) query.timestamp.$gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999); // Include the entire end day
+        query.timestamp.$lte = end;
+      }
+    }
+
+    if (search) {
+      const searchRegex = new RegExp(search, 'i'); // Case-insensitive search
+      query.$or = [
+        { instructorEmail: searchRegex },
+        { action: searchRegex },
+        { details: searchRegex }
+      ];
+    }
+
+    // Fetch logs, newest first. Increase limit if filtering, otherwise default to 200
+    const limit = (startDate || endDate || search) ? 1000 : 200;
+    const logs = await Log.find(query).sort({ timestamp: -1 }).limit(limit);
+    res.json(logs);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch logs' });
+  }
+});
+
+// Endpoint to delete old logs (For Super Admin)
+app.delete('/api/logs', verifyToken, async (req, res) => {
+  try {
+    // Security Check: Ensure the user is a Super Admin
+    if (!req.user.email || !SUPER_ADMINS.includes(req.user.email)) {
+      return res.status(403).json({ error: 'Access Denied: You are not a Super Admin.' });
+    }
+
+    const { olderThan } = req.query;
+    if (!olderThan) {
+      return res.status(400).json({ error: 'Missing olderThan date parameter' });
+    }
+
+    const dateThreshold = new Date(olderThan);
+    if (isNaN(dateThreshold.getTime())) {
+      return res.status(400).json({ error: 'Invalid date format' });
+    }
+
+    const result = await Log.deleteMany({ timestamp: { $lt: dateThreshold } });
+    
+    // Log the cleanup action
+    await Log.create({
+      instructorId: req.user.uid,
+      instructorEmail: req.user.email || 'Unknown',
+      action: 'CLEANUP_LOGS',
+      details: `Deleted ${result.deletedCount} logs older than ${olderThan}`
+    });
+
+    res.json({ success: true, deletedCount: result.deletedCount });
+  } catch (error) {
+    console.error('Delete logs error:', error);
+    res.status(500).json({ error: 'Failed to delete logs' });
+  }
+});
+
+// Endpoint to get unique instructors and last login (For Super Admin)
+app.get('/api/instructors', verifyToken, async (req, res) => {
+  try {
+    if (!req.user.email || !SUPER_ADMINS.includes(req.user.email)) {
+      return res.status(403).json({ error: 'Access Denied' });
+    }
+
+    const instructors = await Log.aggregate([
+      { $match: { action: 'LOGIN' } },
+      { $sort: { timestamp: -1 } },
+      {
+        $group: {
+          _id: "$instructorEmail",
+          instructorId: { $first: "$instructorId" },
+          lastLogin: { $max: "$timestamp" }
+        }
+      },
+      { $project: { _id: 0, email: "$_id", instructorId: 1, lastLogin: 1 } },
+      { $sort: { lastLogin: -1 } }
+    ]);
+
+    // Enrich with Firebase Auth data (disabled status)
+    const enrichedInstructors = await Promise.all(instructors.map(async (inst) => {
+      try {
+        const userRecord = await admin.auth().getUser(inst.instructorId);
+        return { ...inst, disabled: userRecord.disabled };
+      } catch (e) {
+        return { ...inst, disabled: null }; // User not found in Auth (deleted?)
+      }
+    }));
+
+    res.json(enrichedInstructors);
+  } catch (error) {
+    console.error('Fetch instructors error:', error);
+    res.status(500).json({ error: 'Failed to fetch instructors' });
+  }
+});
+
+// Endpoint to toggle instructor ban status (For Super Admin)
+app.post('/api/instructors/:uid/status', verifyToken, async (req, res) => {
+  try {
+    // Security Check
+    if (!req.user.email || !SUPER_ADMINS.includes(req.user.email)) {
+      return res.status(403).json({ error: 'Access Denied' });
+    }
+
+    const { uid } = req.params;
+    const { disabled } = req.body; // true = ban, false = unban
+
+    // Update Firebase Auth user
+    await admin.auth().updateUser(uid, { disabled: disabled });
+
+    // If banning, revoke refresh tokens to force logout
+    if (disabled) {
+      await admin.auth().revokeRefreshTokens(uid);
+    }
+
+    // Log the action
+    await Log.create({
+      instructorId: req.user.uid,
+      instructorEmail: req.user.email || 'Unknown',
+      action: disabled ? 'BAN_INSTRUCTOR' : 'UNBAN_INSTRUCTOR',
+      details: `Target UID: ${uid}`
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Update instructor status error:', error);
+    res.status(500).json({ error: 'Failed to update instructor status' });
+  }
+});
+
+// Endpoint to generate password reset link (For Super Admin)
+app.post('/api/instructors/:uid/reset-password', verifyToken, async (req, res) => {
+  try {
+    // Security Check
+    if (!req.user.email || !SUPER_ADMINS.includes(req.user.email)) {
+      return res.status(403).json({ error: 'Access Denied' });
+    }
+
+    const { uid } = req.params;
+    const userRecord = await admin.auth().getUser(uid);
+    const email = userRecord.email;
+
+    const link = await admin.auth().generatePasswordResetLink(email);
+
+    // Log the action
+    await Log.create({
+      instructorId: req.user.uid,
+      instructorEmail: req.user.email || 'Unknown',
+      action: 'GENERATE_RESET_LINK',
+      details: `Generated password reset link for ${email} (UID: ${uid})`
+    });
+
+    res.json({ success: true, link });
+  } catch (error) {
+    console.error('Generate reset link error:', error);
+    res.status(500).json({ error: 'Failed to generate reset link' });
+  }
 });
 
 // A catch-all route to send index.html for any other GET request that isn't an API call.

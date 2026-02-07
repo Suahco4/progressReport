@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin - Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+    <!-- Firebase SDKs (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4">
+
+    <!-- Header -->
+    <header class="w-full max-w-6xl flex justify-between items-center mb-6">
+        <div class="flex items-center gap-3 text-gray-800">
+            <i class="fa-solid fa-user-secret text-3xl"></i>
+            <h1 class="text-2xl font-bold">Super<span class="text-indigo-600">Admin</span> Monitor</h1>
+        </div>
+        <button onclick="logout()" id="logout-btn" class="hidden bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition">
+            Logout
+        </button>
+    </header>
+
+    <!-- Login Section -->
+    <div id="login-section" class="w-full max-w-md bg-white p-8 rounded-xl shadow-lg fade-in">
+        <h2 class="text-xl font-bold mb-4 text-center">Admin Access</h2>
+        <form id="login-form" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Email</label>
+                <input type="email" id="email" class="w-full border rounded p-2" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Password</label>
+                <input type="password" id="password" class="w-full border rounded p-2" required>
+            </div>
+            <p id="error-msg" class="text-red-500 text-sm hidden"></p>
+            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">Login</button>
+        </form>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div id="dashboard-section" class="hidden w-full max-w-6xl bg-white rounded-xl shadow-lg overflow-hidden fade-in flex flex-col h-[80vh]">
+        <div class="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+            <h2 class="text-lg font-bold text-gray-800">Instructor Activity Logs</h2>
+            <div class="flex gap-2 items-center">
+                <input type="text" id="search-input" placeholder="Search logs..." class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-indigo-500 focus:border-indigo-500 w-32 md:w-48">
+                <input type="date" id="start-date" class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                <span class="text-gray-400 text-sm">to</span>
+                <input type="date" id="end-date" class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                <button onclick="fetchLogs()" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700 transition mr-2 cursor-pointer">Filter</button>
+
+                <button onclick="viewInstructors()" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium cursor-pointer border-l pl-2 border-gray-300" title="View Instructors">
+                    <i class="fa-solid fa-users"></i> Instructors
+                </button>
+                <button onclick="deleteOldLogs()" class="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer border-l pl-2 border-gray-300" title="Delete old logs">
+                    <i class="fa-solid fa-trash-can"></i> Cleanup
+                </button>
+                <button onclick="exportLogsToCSV()" class="text-green-600 hover:text-green-800 text-sm font-medium cursor-pointer">
+                    <i class="fa-solid fa-file-csv"></i> Export CSV
+                </button>
+                <button onclick="fetchLogs()" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium cursor-pointer">
+                    <i class="fa-solid fa-rotate"></i> Refresh Logs
+                </button>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-auto p-0">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100 sticky top-0">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Instructor</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                    </tr>
+                </thead>
+                <tbody id="logs-body" class="bg-white divide-y divide-gray-200">
+                    <!-- Logs go here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+            <span class="text-sm text-gray-600" id="page-info">Page 1 of 1</span>
+            <div class="flex gap-2">
+                <button onclick="changePage(-1)" id="prev-btn" class="px-3 py-1 bg-white border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+                <button onclick="changePage(1)" id="next-btn" class="px-3 py-1 bg-white border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Details Modal -->
+    <div id="log-modal" class="hidden fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50 fade-in flex items-center justify-center">
+        <div class="relative p-6 border w-11/12 md:w-1/2 shadow-lg rounded-xl bg-white">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-900">Log Details</h3>
+                <button onclick="closeLogModal()" class="text-gray-400 hover:text-gray-700 cursor-pointer">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <div class="space-y-3 text-sm">
+                <div><span class="font-bold text-gray-700">Timestamp:</span> <span id="modal-timestamp" class="text-gray-600"></span></div>
+                <div><span class="font-bold text-gray-700">Instructor:</span> <span id="modal-instructor" class="text-gray-600"></span></div>
+                <div><span class="font-bold text-gray-700">Instructor ID:</span> <span id="modal-instructor-id" class="text-gray-600 font-mono text-xs bg-gray-100 px-1 rounded"></span></div>
+                <div><span class="font-bold text-gray-700">Action:</span> <span id="modal-action" class="font-bold"></span></div>
+                <div>
+                    <span class="font-bold text-gray-700 block mb-1">Details:</span>
+                    <div id="modal-details" class="bg-gray-50 p-3 rounded border border-gray-200 text-gray-800 whitespace-pre-wrap"></div>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button onclick="closeLogModal()" class="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition cursor-pointer">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructors List Modal -->
+    <div id="instructors-modal" class="hidden fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50 fade-in flex items-center justify-center">
+        <div class="relative p-6 border w-11/12 md:w-2/3 shadow-lg rounded-xl bg-white max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-900">Instructor List</h3>
+                <button onclick="closeInstructorsModal()" class="text-gray-400 hover:text-gray-700 cursor-pointer">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50 sticky top-0">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Login</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="instructors-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Rows -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-4 flex justify-end">
+                <button onclick="closeInstructorsModal()" class="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition cursor-pointer">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'http://localhost:3000'
+            : 'https://progressreport-7jlm.onrender.com';
+
+        let auth;
+        let currentLogs = [];
+        let currentPage = 1;
+        const itemsPerPage = 15;
+        
+        // Define allowed super admin emails (Must match backend for security)
+        const ALLOWED_ADMINS = ['admin@example.com', 'principal@school.com']; // <--- Add your emails here
+
+        // Initialize Firebase
+        async function init() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/config/firebase`);
+                const config = await response.json();
+                firebase.initializeApp(config);
+                auth = firebase.auth();
+
+                auth.onAuthStateChanged(user => {
+                    if (user) {
+                        // Check if the logged-in user is in the allowed list
+                        if (ALLOWED_ADMINS.includes(user.email)) {
+                            document.getElementById('login-section').classList.add('hidden');
+                            document.getElementById('dashboard-section').classList.remove('hidden');
+                            document.getElementById('logout-btn').classList.remove('hidden');
+                            fetchLogs();
+                        } else {
+                            // User is logged in but not authorized
+                            alert("Access Denied: You are not authorized to view this page.");
+                            auth.signOut(); // Immediately sign them out
+                        }
+                    } else {
+                        document.getElementById('login-section').classList.remove('hidden');
+                        document.getElementById('dashboard-section').classList.add('hidden');
+                        document.getElementById('logout-btn').classList.add('hidden');
+                    }
+                });
+            } catch (e) {
+                console.error(e);
+                alert("Failed to initialize system.");
+            }
+        }
+
+        // Login Handler
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-msg');
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                errorMsg.classList.add('hidden');
+            } catch (error) {
+                errorMsg.textContent = "Access Denied: " + error.message;
+                errorMsg.classList.remove('hidden');
+            }
+        });
+
+        // Logout Handler
+        function logout() {
+            auth.signOut();
+        }
+
+        // Fetch Logs
+        async function fetchLogs() {
+            const tbody = document.getElementById('logs-body');
+            tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center">Loading...</td></tr>';
+
+            try {
+                const token = await auth.currentUser.getIdToken();
+                
+                const startDate = document.getElementById('start-date').value;
+                const endDate = document.getElementById('end-date').value;
+                const search = document.getElementById('search-input').value.trim();
+                const params = new URLSearchParams();
+                if (startDate) params.append('startDate', startDate);
+                if (endDate) params.append('endDate', endDate);
+                if (search) params.append('search', search);
+
+                const res = await fetch(`${API_BASE_URL}/api/logs?${params.toString()}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (res.status === 403) {
+                    throw new Error("Access Denied: You are not a Super Admin.");
+                }
+
+                if (!res.ok) throw new Error("Failed to fetch logs");
+                
+                const logs = await res.json();
+                currentLogs = logs;
+                currentPage = 1;
+                renderLogs();
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error: ${error.message}</td></tr>`;
+            }
+        }
+
+        function renderLogs() {
+            const tbody = document.getElementById('logs-body');
+            tbody.innerHTML = '';
+
+            if (currentLogs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No activity recorded yet.</td></tr>';
+                updatePaginationControls();
+                return;
+            }
+
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const logsToShow = currentLogs.slice(start, end);
+
+            logsToShow.forEach(log => {
+                const row = document.createElement('tr');
+                
+                // Color code actions
+                let actionClass = "text-gray-800";
+                let bgClass = "";
+                if (log.action === 'LOGIN') { actionClass = "text-green-600 font-bold"; bgClass = "bg-green-50"; }
+                if (log.action === 'LOGOUT') { actionClass = "text-orange-600"; }
+                if (log.action === 'ADD_STUDENT') { actionClass = "text-blue-600 font-bold"; bgClass = "bg-blue-50"; }
+                if (log.action === 'DELETE_STUDENT') { actionClass = "text-red-600 font-bold"; bgClass = "bg-red-50"; }
+
+                row.className = `hover:bg-gray-50 transition ${bgClass} cursor-pointer`;
+                row.onclick = () => openLogModal(log);
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${new Date(log.timestamp).toLocaleString()}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div class="font-medium">${log.instructorEmail}</div>
+                        <div class="text-xs text-gray-400">${log.instructorId}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm ${actionClass}">
+                        ${log.action}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600">
+                        ${log.details}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            updatePaginationControls();
+        }
+
+        function changePage(delta) {
+            const totalPages = Math.ceil(currentLogs.length / itemsPerPage);
+            const newPage = currentPage + delta;
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderLogs();
+            }
+        }
+
+        function updatePaginationControls() {
+            const totalPages = Math.ceil(currentLogs.length / itemsPerPage) || 1;
+            document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById('prev-btn').disabled = currentPage === 1;
+            document.getElementById('next-btn').disabled = currentPage === totalPages;
+        }
+
+        function openLogModal(log) {
+            document.getElementById('modal-timestamp').textContent = new Date(log.timestamp).toLocaleString();
+            document.getElementById('modal-instructor').textContent = log.instructorEmail;
+            document.getElementById('modal-instructor-id').textContent = log.instructorId;
+            document.getElementById('modal-action').textContent = log.action;
+            document.getElementById('modal-details').textContent = log.details;
+            document.getElementById('log-modal').classList.remove('hidden');
+        }
+
+        function closeLogModal() {
+            document.getElementById('log-modal').classList.add('hidden');
+        }
+
+        function exportLogsToCSV() {
+            if (!currentLogs || currentLogs.length === 0) {
+                alert("No logs available to export.");
+                return;
+            }
+
+            const headers = ["Timestamp", "Instructor Email", "Instructor ID", "Action", "Details"];
+            const rows = [headers];
+
+            currentLogs.forEach(log => {
+                const escape = (val) => `"${(val || '').toString().replace(/"/g, '""')}"`;
+                rows.push([
+                    escape(new Date(log.timestamp).toLocaleString()),
+                    escape(log.instructorEmail),
+                    escape(log.instructorId),
+                    escape(log.action),
+                    escape(log.details)
+                ]);
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `activity_logs_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        async function deleteOldLogs() {
+            const dateStr = prompt("Delete logs older than (YYYY-MM-DD):");
+            if (!dateStr) return;
+
+            // Basic validation
+            if (isNaN(new Date(dateStr).getTime())) {
+                alert("Invalid date format.");
+                return;
+            }
+
+            if (!confirm(`WARNING: This will permanently delete all activity logs created before ${dateStr}.\n\nAre you sure you want to proceed?`)) {
+                return;
+            }
+
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch(`${API_BASE_URL}/api/logs?olderThan=${dateStr}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || "Failed to delete logs");
+                }
+
+                const data = await res.json();
+                alert(`Cleanup Complete: ${data.deletedCount} logs deleted.`);
+                fetchLogs(); // Refresh the table
+            } catch (error) {
+                alert("Error: " + error.message);
+            }
+        }
+
+        async function viewInstructors() {
+            const tbody = document.getElementById('instructors-body');
+            tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center">Loading...</td></tr>';
+            document.getElementById('instructors-modal').classList.remove('hidden');
+
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch(`${API_BASE_URL}/api/instructors`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error("Failed to fetch instructors");
+                const instructors = await res.json();
+                
+                tbody.innerHTML = '';
+                if (instructors.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No instructors found.</td></tr>';
+                    return;
+                }
+
+                instructors.forEach(inst => {
+                    const row = document.createElement('tr');
+                    row.className = "hover:bg-gray-50";
+                    
+                    let statusBadge = '<span class="px-2 py-1 rounded text-xs font-bold bg-green-100 text-green-800">Active</span>';
+                    let actionBtns = `<div class="flex gap-2">`;
+                    
+                    if (inst.disabled === true) {
+                        statusBadge = '<span class="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-800">Banned</span>';
+                        actionBtns += `<button onclick="toggleBan('${inst.instructorId}', false)" class="text-green-600 hover:text-green-900 text-xs font-bold border border-green-200 px-2 py-1 rounded hover:bg-green-50 transition cursor-pointer">UNBAN</button>`;
+                    } else if (inst.disabled === null) {
+                        statusBadge = '<span class="px-2 py-1 rounded text-xs font-bold bg-gray-100 text-gray-800">Deleted</span>';
+                        actionBtns += '<span class="text-gray-400 text-xs">N/A</span>';
+                    } else {
+                        actionBtns += `<button onclick="toggleBan('${inst.instructorId}', true)" class="text-red-600 hover:text-red-900 text-xs font-bold border border-red-200 px-2 py-1 rounded hover:bg-red-50 transition cursor-pointer">BAN</button>`;
+                    }
+
+                    if (inst.disabled !== null) {
+                        actionBtns += `<button onclick="resetPassword('${inst.instructorId}')" class="text-blue-600 hover:text-blue-900 text-xs font-bold border border-blue-200 px-2 py-1 rounded hover:bg-blue-50 transition cursor-pointer" title="Reset Password"><i class="fa-solid fa-key"></i></button>`;
+                    }
+                    actionBtns += `</div>`;
+
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${inst.email}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">${inst.instructorId}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(inst.lastLogin).toLocaleString()}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">${statusBadge}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">${actionBtns}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error: ${error.message}</td></tr>`;
+            }
+        }
+
+        async function toggleBan(uid, shouldBan) {
+            const action = shouldBan ? "BAN" : "UNBAN";
+            if (!confirm(`Are you sure you want to ${action} this instructor?`)) return;
+
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch(`${API_BASE_URL}/api/instructors/${uid}/status`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({ disabled: shouldBan })
+                });
+
+                if (!res.ok) throw new Error("Failed to update status");
+                
+                // Refresh list
+                viewInstructors();
+                // Also refresh logs to see the action
+                fetchLogs();
+            } catch (error) {
+                alert("Error: " + error.message);
+            }
+        }
+
+        async function resetPassword(uid) {
+            if (!confirm("Generate a password reset link for this instructor?")) return;
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch(`${API_BASE_URL}/api/instructors/${uid}/reset-password`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error("Failed to generate link");
+                const data = await res.json();
+                prompt("Copy this password reset link and send it to the instructor:", data.link);
+            } catch (e) {
+                alert("Error: " + e.message);
+            }
+        }
+
+        function closeInstructorsModal() {
+            document.getElementById('instructors-modal').classList.add('hidden');
+        }
+
+        // Allow pressing "Enter" in search box to trigger filter
+        document.getElementById('search-input').addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') fetchLogs();
+        });
+
+        init();
+    </script>
+</body>
+</html>

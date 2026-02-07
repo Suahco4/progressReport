@@ -280,7 +280,7 @@
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">ID</label>
                             <div class="flex gap-2">
-                                <input type="text" id="edit-id" class="block w-full rounded-l border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2 px-3" required>
+                                <input type="text" id="edit-id" class="block w-full rounded-l border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2 px-3 bg-gray-100" readonly required>
                                 <button type="button" onclick="generateNewId()" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-2 rounded-r border border-l-0 border-indigo-200 text-xs font-bold uppercase transition-colors" title="Generate Unique ID">
                                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                                 </button>
@@ -446,6 +446,11 @@
                 auth.onAuthStateChanged((user) => {
                     if (user) {
                         console.log('Firebase Notification: User signed in', user.uid);
+                        // Log login if not already logged in this session
+                        if (!sessionStorage.getItem('session_active')) {
+                            logActivity('LOGIN', 'Instructor logged into dashboard');
+                            sessionStorage.setItem('session_active', 'true');
+                        }
                         currentUserUid = user.uid;
                         showSection('admin-dashboard-section');
                         fetchSettings();
@@ -459,6 +464,19 @@
                 console.error('Firebase Initialization Error:', error);
                 showToast('Failed to initialize application. Please check configuration.', 'error');
             }
+        }
+
+        // ================= LOGGING HELPER =================
+        async function logActivity(action, details) {
+            try {
+                if (!auth || !auth.currentUser) return;
+                const token = await auth.currentUser.getIdToken();
+                await fetch(`${API_BASE_URL}/api/activity`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ action, details })
+                });
+            } catch (e) { console.error("Logging failed", e); }
         }
 
         initializeFirebase();
@@ -712,7 +730,9 @@
             }
         }
 
-        function logout() {
+        async function logout() {
+            await logActivity('LOGOUT', 'Instructor logged out');
+            sessionStorage.removeItem('session_active');
             auth.signOut().then(() => {
                 adminLoginForm.reset();
                 adminErrorMsg.classList.add('hidden');
@@ -943,16 +963,32 @@
 
         // ================= EDIT/ADD STUDENT LOGIC =================
         function generateNewId() {
-            // Extract numeric part of IDs if possible, else random
-            const numericIds = students.map(s => {
-                const num = parseInt(s.id);
-                return isNaN(num) ? 0 : num;
-            });
+            // Get the year from the edit input if available, otherwise global setting
+            const yearInput = document.getElementById('edit-year').value.trim();
+            const baseYearStr = yearInput || academicYear || new Date().getFullYear().toString();
             
-            let nextId = 1001;
-            if (numericIds.length > 0) {
-                nextId = Math.max(...numericIds) + 1;
-            }
+            // Extract the 4-digit year (e.g., "2023-2024" -> "2023")
+            const yearMatch = baseYearStr.match(/^(\d{4})/);
+            const prefix = yearMatch ? yearMatch[1] : new Date().getFullYear().toString();
+
+            // Find the highest sequence number for this prefix among existing students
+            let maxSeq = 0;
+            students.forEach(s => {
+                const sid = String(s.id);
+                if (sid.startsWith(prefix)) {
+                    // Extract the part after the year
+                    const suffix = sid.substring(prefix.length);
+                    // Check if it's a valid number (expecting 6 digits)
+                    if (/^\d+$/.test(suffix)) {
+                        const seq = parseInt(suffix, 10);
+                        if (seq > maxSeq) maxSeq = seq;
+                    }
+                }
+            });
+
+            // Increment and pad to 6 digits
+            const nextSeq = maxSeq + 1;
+            const nextId = `${prefix}${nextSeq.toString().padStart(6, '0')}`;
             
             document.getElementById('edit-id').value = nextId;
         }
@@ -997,8 +1033,8 @@
                 modeInput.value = 'add';
                 title.textContent = 'Add New Student';
                 form.reset();
-                document.getElementById('edit-id').readOnly = false;
-                document.getElementById('edit-id').classList.remove('bg-gray-100');
+                document.getElementById('edit-id').readOnly = true;
+                document.getElementById('edit-id').classList.add('bg-gray-100');
                 document.getElementById('edit-year').value = academicYear; // Default to global setting
                 lastUpdatedEl.textContent = 'This is a new student record.';
                 document.getElementById('edit-principal-comment').value = '';
@@ -1101,6 +1137,14 @@
                     const avg = calculateAvg(getVal('p4'), getVal('p5'), getVal('p6'), getVal('exam2'));
                     row.querySelector('.sem2').value = avg !== null ? avg.toFixed(1) : '';
                 }
+            }
+        });
+
+        // Auto-update ID when year changes in Add mode
+        document.getElementById('edit-year').addEventListener('input', () => {
+            const mode = document.getElementById('edit-mode').value;
+            if (mode === 'add') {
+                generateNewId();
             }
         });
 

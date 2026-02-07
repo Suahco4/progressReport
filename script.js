@@ -72,6 +72,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             currentStudentData = studentData;
+            
+            // Log student login
+            fetch(`${API_BASE_URL}/api/student/activity`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    studentId: studentData._id,
+                    studentName: studentData.name,
+                    action: 'STUDENT_LOGIN',
+                    details: 'Student viewed report card'
+                })
+            }).catch(err => console.error("Logging failed", err));
+
             displayReportCard(currentStudentData);
             resetInactivityTimer(); // Start the inactivity timer on successful login
 

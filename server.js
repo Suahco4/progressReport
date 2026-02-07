@@ -79,8 +79,11 @@ const Settings = mongoose.model('Settings', settingsSchema);
 
 // --- Activity Log Schema (For Super Admin) ---
 const logSchema = new mongoose.Schema({
-  instructorId: { type: String, required: true },
-  instructorEmail: { type: String, default: 'Unknown' },
+  instructorId: { type: String }, // No longer required to allow student logs
+  instructorEmail: { type: String },
+  studentId: { type: String },
+  studentName: { type: String },
+  userType: { type: String, default: 'INSTRUCTOR' }, // 'INSTRUCTOR' or 'STUDENT'
   action: { type: String, required: true }, // e.g., LOGIN, LOGOUT, ADD_STUDENT
   details: { type: String },
   timestamp: { type: Date, default: Date.now }
@@ -279,7 +282,15 @@ app.get('/api/config/firebase', (req, res) => {
 // --- Super Admin / Logging Endpoints ---
 
 // Define allowed super admin emails
-const SUPER_ADMINS = ['theadmin@gmail.com', 'principal@school.com', 'your-email@example.com']; // <--- Add your emails here
+const SUPER_ADMINS = process.env.SUPER_ADMIN_EMAILS 
+  ? process.env.SUPER_ADMIN_EMAILS.split(',').map(email => email.trim())
+  : ['theadmin@gmail.com', 'principal@school.com', 'your-email@example.com'];
+
+// Endpoint to check super admin status (Used by frontend to validate session)
+app.get('/api/auth/is-superadmin', verifyToken, (req, res) => {
+  const isSuperAdmin = req.user.email && SUPER_ADMINS.includes(req.user.email);
+  res.json({ isSuperAdmin });
+});
 
 // Endpoint to record client-side activities (Login/Logout)
 app.post('/api/activity', verifyToken, async (req, res) => {
@@ -288,6 +299,7 @@ app.post('/api/activity', verifyToken, async (req, res) => {
     await Log.create({
       instructorId: req.user.uid,
       instructorEmail: req.user.email || 'Unknown',
+      userType: 'INSTRUCTOR',
       action: action,
       details: details || ''
     });
@@ -295,6 +307,24 @@ app.post('/api/activity', verifyToken, async (req, res) => {
   } catch (error) {
     console.error('Logging error:', error);
     res.status(500).json({ error: 'Failed to log activity' });
+  }
+});
+
+// Endpoint to record STUDENT activities (Public/No Token required)
+app.post('/api/student/activity', async (req, res) => {
+  try {
+    const { studentId, studentName, action, details } = req.body;
+    await Log.create({
+      studentId: studentId,
+      studentName: studentName,
+      userType: 'STUDENT',
+      action: action || 'STUDENT_LOGIN',
+      details: details || ''
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Student logging error:', error);
+    res.status(500).json({ error: 'Failed to log student activity' });
   }
 });
 
@@ -323,6 +353,8 @@ app.get('/api/logs', verifyToken, async (req, res) => {
       const searchRegex = new RegExp(search, 'i'); // Case-insensitive search
       query.$or = [
         { instructorEmail: searchRegex },
+        { studentName: searchRegex },
+        { studentId: searchRegex },
         { action: searchRegex },
         { details: searchRegex }
       ];

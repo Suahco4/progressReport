@@ -54,6 +54,10 @@
                     <span id="error-text">Invalid Credentials.</span>
                 </div>
 
+                <div class="flex justify-end">
+                    <button type="button" onclick="openForgotModal()" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium cursor-pointer">Forgot Password?</button>
+                </div>
+
                 <button type="submit" class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors cursor-pointer">
                     Login to Dashboard
                 </button>
@@ -98,7 +102,7 @@
                 <thead class="bg-gray-100 sticky top-0">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Instructor</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
                     </tr>
@@ -115,6 +119,25 @@
             <div class="flex gap-2">
                 <button onclick="changePage(-1)" id="prev-btn" class="px-3 py-1 bg-white border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
                 <button onclick="changePage(1)" id="next-btn" class="px-3 py-1 bg-white border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgot-password-modal" class="hidden fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50 fade-in flex items-center justify-center">
+        <div class="relative p-6 border w-96 shadow-lg rounded-xl bg-white">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 mb-4">
+                    <i class="fa-solid fa-key text-indigo-600"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900">Reset Password</h3>
+                <p class="text-sm text-gray-500 mt-2 mb-4">Enter your email to receive a reset link.</p>
+                <input type="email" id="reset-email" class="block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-indigo-500 focus:border-indigo-500 py-2 px-3 text-gray-900 mb-2" placeholder="admin@example.com">
+                <p id="reset-msg" class="text-xs mb-4 hidden"></p>
+                <div class="flex gap-2">
+                    <button onclick="closeForgotModal()" class="w-1/2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition cursor-pointer">Cancel</button>
+                    <button onclick="sendResetEmail()" class="w-1/2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition cursor-pointer">Send Link</button>
+                </div>
             </div>
         </div>
     </div>
@@ -185,9 +208,6 @@
         let currentPage = 1;
         const itemsPerPage = 15;
         
-        // Define allowed super admin emails (Must match backend for security)
-        const ALLOWED_ADMINS = ['theadmin@gmail.com', 'principal@school.com', 'your-email@example.com']; // <--- Add your emails here
-
         // Initialize Firebase
         async function init() {
             try {
@@ -196,18 +216,29 @@
                 firebase.initializeApp(config);
                 auth = firebase.auth();
 
-                auth.onAuthStateChanged(user => {
+                auth.onAuthStateChanged(async user => {
                     if (user) {
-                        // Check if the logged-in user is in the allowed list
-                        if (ALLOWED_ADMINS.includes(user.email)) {
-                            document.getElementById('login-section').classList.add('hidden');
-                            document.getElementById('dashboard-section').classList.remove('hidden');
-                            document.getElementById('logout-btn').classList.remove('hidden');
-                            fetchLogs();
-                        } else {
-                            // User is logged in but not authorized
-                            alert("Access Denied: You are not authorized to view this page.");
-                            auth.signOut(); // Immediately sign them out
+                        try {
+                            // Check against server to support Env Var configuration
+                            const token = await user.getIdToken();
+                            const res = await fetch(`${API_BASE_URL}/api/auth/is-superadmin`, {
+                                headers: { 'Authorization': `Bearer ${token}` }
+                            });
+                            const data = await res.json();
+
+                            if (data.isSuperAdmin) {
+                                document.getElementById('login-section').classList.add('hidden');
+                                document.getElementById('dashboard-section').classList.remove('hidden');
+                                document.getElementById('logout-btn').classList.remove('hidden');
+                                fetchLogs();
+                            } else {
+                                alert("Access Denied: You are not authorized to view this page.");
+                                auth.signOut();
+                            }
+                        } catch (err) {
+                            console.error("Auth check failed", err);
+                            alert("Authentication check failed.");
+                            auth.signOut();
                         }
                     } else {
                         document.getElementById('login-section').classList.remove('hidden');
@@ -246,7 +277,15 @@
         // Fetch Logs
         async function fetchLogs() {
             const tbody = document.getElementById('logs-body');
-            tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center">Loading...</td></tr>';
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="px-6 py-12 text-center">
+                        <div class="flex flex-col items-center justify-center">
+                            <i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-600 mb-3"></i>
+                            <span class="text-gray-500 font-medium">Loading activity logs...</span>
+                        </div>
+                    </td>
+                </tr>`;
 
             try {
                 const token = await auth.currentUser.getIdToken();
@@ -299,9 +338,21 @@
                 let actionClass = "text-gray-800";
                 let bgClass = "";
                 if (log.action === 'LOGIN') { actionClass = "text-green-600 font-bold"; bgClass = "bg-green-50"; }
+                if (log.action === 'STUDENT_LOGIN') { actionClass = "text-teal-600 font-bold"; bgClass = "bg-teal-50"; }
                 if (log.action === 'LOGOUT') { actionClass = "text-orange-600"; }
                 if (log.action === 'ADD_STUDENT') { actionClass = "text-blue-600 font-bold"; bgClass = "bg-blue-50"; }
                 if (log.action === 'DELETE_STUDENT') { actionClass = "text-red-600 font-bold"; bgClass = "bg-red-50"; }
+
+                // Determine User Display
+                let userName = log.instructorEmail || 'Unknown';
+                let userId = log.instructorId || 'N/A';
+                let userIcon = '<i class="fa-solid fa-user-tie text-gray-400 mr-1"></i>';
+
+                if (log.userType === 'STUDENT') {
+                    userName = log.studentName || 'Unknown Student';
+                    userId = log.studentId || 'N/A';
+                    userIcon = '<i class="fa-solid fa-graduation-cap text-gray-400 mr-1"></i>';
+                }
 
                 row.className = `hover:bg-gray-50 transition ${bgClass} cursor-pointer`;
                 row.onclick = () => openLogModal(log);
@@ -310,8 +361,8 @@
                         ${new Date(log.timestamp).toLocaleString()}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div class="font-medium">${log.instructorEmail}</div>
-                        <div class="text-xs text-gray-400">${log.instructorId}</div>
+                        <div class="font-medium">${userIcon} ${userName}</div>
+                        <div class="text-xs text-gray-400">${userId}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm ${actionClass}">
                         ${log.action}
@@ -344,10 +395,17 @@
 
         function openLogModal(log) {
             document.getElementById('modal-timestamp').textContent = new Date(log.timestamp).toLocaleString();
-            document.getElementById('modal-instructor').textContent = log.instructorEmail;
-            document.getElementById('modal-instructor-id').textContent = log.instructorId;
             document.getElementById('modal-action').textContent = log.action;
             document.getElementById('modal-details').textContent = log.details;
+            
+            if (log.userType === 'STUDENT') {
+                document.getElementById('modal-instructor').textContent = log.studentName + " (Student)";
+                document.getElementById('modal-instructor-id').textContent = log.studentId;
+            } else {
+                document.getElementById('modal-instructor').textContent = log.instructorEmail + " (Instructor)";
+                document.getElementById('modal-instructor-id').textContent = log.instructorId;
+            }
+            
             document.getElementById('log-modal').classList.remove('hidden');
         }
 
@@ -361,15 +419,20 @@
                 return;
             }
 
-            const headers = ["Timestamp", "Instructor Email", "Instructor ID", "Action", "Details"];
+            const headers = ["Timestamp", "User Type", "Name/Email", "ID", "Action", "Details"];
             const rows = [headers];
 
             currentLogs.forEach(log => {
                 const escape = (val) => `"${(val || '').toString().replace(/"/g, '""')}"`;
+                const isStudent = log.userType === 'STUDENT';
+                const name = isStudent ? log.studentName : log.instructorEmail;
+                const id = isStudent ? log.studentId : log.instructorId;
+
                 rows.push([
                     escape(new Date(log.timestamp).toLocaleString()),
-                    escape(log.instructorEmail),
-                    escape(log.instructorId),
+                    escape(log.userType || 'INSTRUCTOR'),
+                    escape(name),
+                    escape(id),
                     escape(log.action),
                     escape(log.details)
                 ]);
@@ -421,7 +484,15 @@
 
         async function viewInstructors() {
             const tbody = document.getElementById('instructors-body');
-            tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center">Loading...</td></tr>';
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center">
+                        <div class="flex flex-col items-center justify-center">
+                            <i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-600 mb-3"></i>
+                            <span class="text-gray-500 font-medium">Loading instructors...</span>
+                        </div>
+                    </td>
+                </tr>`;
             document.getElementById('instructors-modal').classList.remove('hidden');
 
             try {
@@ -518,6 +589,40 @@
 
         function closeInstructorsModal() {
             document.getElementById('instructors-modal').classList.add('hidden');
+        }
+
+        // Forgot Password Logic
+        function openForgotModal() {
+            const emailVal = document.getElementById('email').value;
+            if(emailVal) document.getElementById('reset-email').value = emailVal;
+            document.getElementById('reset-msg').classList.add('hidden');
+            document.getElementById('forgot-password-modal').classList.remove('hidden');
+        }
+
+        function closeForgotModal() {
+            document.getElementById('forgot-password-modal').classList.add('hidden');
+        }
+
+        function sendResetEmail() {
+            const email = document.getElementById('reset-email').value;
+            const msgEl = document.getElementById('reset-msg');
+            
+            if(!email) {
+                msgEl.textContent = "Please enter an email address.";
+                msgEl.className = "text-xs mb-4 block text-red-600";
+                return;
+            }
+
+            auth.sendPasswordResetEmail(email)
+                .then(() => {
+                    msgEl.textContent = "Reset link sent! Check your inbox.";
+                    msgEl.className = "text-xs mb-4 block text-green-600";
+                    setTimeout(closeForgotModal, 2000);
+                })
+                .catch((error) => {
+                    msgEl.textContent = error.message;
+                    msgEl.className = "text-xs mb-4 block text-red-600";
+                });
         }
 
         // Allow pressing "Enter" in search box to trigger filter

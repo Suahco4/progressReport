@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Report Cards - EduResult</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
@@ -402,8 +402,11 @@
                         <p class="text-sm text-gray-500" id="confirm-message">Are you sure?</p>
                     </div>
                     <div class="flex justify-center gap-3 mt-4">
-                        <button onclick="closeConfirmModal()" class="px-4 py-2 bg-gray-100 text-gray-700 text-base font-medium rounded-lg shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors cursor-pointer">Cancel</button>
-                        <button onclick="executeConfirmAction()" class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors cursor-pointer">Confirm</button>
+                        <button id="confirm-cancel-btn" onclick="closeConfirmModal()" class="px-4 py-2 bg-gray-100 text-gray-700 text-base font-medium rounded-lg shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors cursor-pointer">Cancel</button>
+                        <button id="confirm-action-btn" onclick="executeConfirmAction()" class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors cursor-pointer flex items-center justify-center">
+                            <i id="confirm-spinner" class="fa-solid fa-circle-notch fa-spin hidden mr-2"></i>
+                            <span id="confirm-btn-text">Confirm</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -674,10 +677,18 @@
         // ================= CONFIRMATION MODAL LOGIC =================
         let onConfirmAction = null;
 
-        function openConfirmModal(title, message, callback) {
+        function openConfirmModal(title, message, callback, isDestructive = false) {
             document.getElementById('confirm-title').textContent = title;
             document.getElementById('confirm-message').textContent = message;
             onConfirmAction = callback;
+            
+            const confirmBtn = document.getElementById('confirm-action-btn');
+            if (isDestructive) {
+                confirmBtn.className = "px-4 py-2 bg-red-600 text-white text-base font-medium rounded-lg shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors cursor-pointer flex items-center justify-center";
+            } else {
+                confirmBtn.className = "px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors cursor-pointer flex items-center justify-center";
+            }
+
             document.getElementById('confirmation-modal').classList.remove('hidden');
         }
 
@@ -686,9 +697,33 @@
             onConfirmAction = null;
         }
 
-        function executeConfirmAction() {
-            if (onConfirmAction) onConfirmAction();
-            closeConfirmModal();
+        async function executeConfirmAction() {
+            if (onConfirmAction) {
+                const btn = document.getElementById('confirm-action-btn');
+                const spinner = document.getElementById('confirm-spinner');
+                const text = document.getElementById('confirm-btn-text');
+                const cancelBtn = document.getElementById('confirm-cancel-btn');
+
+                // Show loading state
+                btn.disabled = true;
+                if (cancelBtn) cancelBtn.disabled = true;
+                spinner.classList.remove('hidden');
+                const originalText = text.textContent;
+                text.textContent = 'Processing...';
+
+                try {
+                    await onConfirmAction();
+                } finally {
+                    // Reset state
+                    btn.disabled = false;
+                    if (cancelBtn) cancelBtn.disabled = false;
+                    spinner.classList.add('hidden');
+                    text.textContent = originalText;
+                    closeConfirmModal();
+                }
+            } else {
+                closeConfirmModal();
+            }
         }
 
         // ================= TOAST NOTIFICATION =================
@@ -1086,22 +1121,27 @@
                 return;
             }
             
-            if (!confirm(`Are you sure you want to delete ${selectedStudentIds.size} selected students? This action cannot be undone.`)) return;
-            
-            const promises = [];
-            for (const id of selectedStudentIds) {
-                promises.push(deleteStudentApi(id, true));
-            }
-            
-            try {
-                await Promise.all(promises);
-                selectedStudentIds.clear();
-                await fetchStudents();
-                showToast("Bulk delete completed.");
-            } catch (e) {
-                showToast("Some deletions failed.", "error");
-                await fetchStudents();
-            }
+            openConfirmModal(
+                "Confirm Bulk Delete",
+                `Are you sure you want to delete ${selectedStudentIds.size} selected students? This action cannot be undone.`,
+                async () => {
+                    const promises = [];
+                    for (const id of selectedStudentIds) {
+                        promises.push(deleteStudentApi(id, true));
+                    }
+                    
+                    try {
+                        await Promise.all(promises);
+                        selectedStudentIds.clear();
+                        await fetchStudents();
+                        showToast("Bulk delete completed.");
+                    } catch (e) {
+                        showToast("Some deletions failed.", "error");
+                        await fetchStudents();
+                    }
+                },
+                true // isDestructive
+            );
         }
 
         // ================= EDIT/ADD STUDENT LOGIC =================
@@ -1462,7 +1502,7 @@
                 <html>
                 <head>
                     <title>Report Card - ${student.name}</title>
-                    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"><\/script>
+                    <script src="https://cdn.tailwindcss.com"><\/script>
                 </head>
                 <body class="p-8 bg-white">
                     <div class="max-w-4xl mx-auto border border-gray-300 p-8 rounded-xl">

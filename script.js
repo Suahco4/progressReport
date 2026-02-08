@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const studentNameInput = document.getElementById('login-student-name');
     const studentIdInput = document.getElementById('login-student-id');
     const loadingSpinner = document.getElementById('loading-spinner');
+    const sessionModal = document.getElementById('session-expired-modal');
+    const sessionBtn = document.getElementById('session-expired-btn');
 
     // --- State ---
     let currentStudentData = null;
@@ -26,8 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Only run the timer when the report card is visible
         if (reportSection.classList.contains('active')) {
             inactivityTimer = setTimeout(() => {
-                alert('You have been logged out due to inactivity.');
                 window.logout();
+                if (sessionModal) sessionModal.classList.remove('hidden');
             }, INACTIVITY_TIMEOUT);
         }
     }
@@ -306,5 +308,12 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     // --- Event Listeners ---
     loginForm.addEventListener('submit', handleLogin);
+    
+    if (sessionBtn) {
+        sessionBtn.addEventListener('click', () => {
+            if (sessionModal) sessionModal.classList.add('hidden');
+        });
+    }
+
     setupActivityListeners(); // Start listening for user activity
 });

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Portal - EduResult</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
@@ -211,6 +211,24 @@
         </div>
 
     </main>
+
+    <!-- Session Expired Modal -->
+    <div id="session-expired-modal" class="hidden fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50 fade-in flex items-center justify-center">
+        <div class="relative p-5 border w-96 shadow-lg rounded-xl bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 mb-4">
+                    <i class="fa-solid fa-clock-rotate-left text-orange-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg leading-6 font-bold text-gray-900">Session Expired</h3>
+                <div class="mt-2 px-2 py-3">
+                    <p class="text-sm text-gray-500">You have been logged out due to inactivity.</p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="session-expired-btn" class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-lg w-full shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors cursor-pointer">Login Again</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>

@@ -627,6 +627,21 @@ async function initializeFirebase() {
         if (typeof firebase !== 'undefined' && firebase.auth) {
             firebase.auth().onAuthStateChanged(async (user) => {
                 if (user) {
+                    // Check if user is Super Admin and redirect if necessary
+                    try {
+                        const token = await user.getIdToken();
+                        const res = await fetch(`${API_BASE_URL}/api/auth/is-superadmin`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await res.json();
+                        if (data.isSuperAdmin) {
+                            window.location.href = '/superadmin';
+                            return;
+                        }
+                    } catch (e) {
+                        console.error("Auth check failed", e);
+                    }
+
                     // console.log('User is signed in. Fetching student list.');
                     try {
                         const students = await fetchStudents();

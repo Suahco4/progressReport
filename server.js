@@ -100,6 +100,11 @@ const PORT = process.env.PORT || 3000; // Use Render's port or 3000 for local de
 // which is on a different domain, to make requests to this backend.
 app.use(cors());
 
+// Check for email credentials to prevent runtime errors later
+if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+  console.warn("WARNING: EMAIL_USER or EMAIL_PASS is missing in environment variables. Email features will fail.");
+}
+
 // Configure Nodemailer (Moved up to be accessible by routes)
 const transporter = nodemailer.createTransport({
   service: 'gmail',

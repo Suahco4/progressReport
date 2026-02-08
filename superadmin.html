@@ -78,6 +78,11 @@
         <div class="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
             <h2 class="text-lg font-bold text-gray-800 mb-4 md:mb-0">Instructor Activity Logs</h2>
             <div class="flex flex-wrap gap-2 items-center w-full md:w-auto justify-start md:justify-end">
+                <select id="user-type-filter" onchange="fetchLogs()" class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-teal-500 focus:border-teal-500 w-full sm:w-auto">
+                    <option value="">All Users</option>
+                    <option value="INSTRUCTOR">Instructors</option>
+                    <option value="STUDENT">Students</option>
+                </select>
                 <select id="action-filter" onchange="fetchLogs()" class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-teal-500 focus:border-teal-500 w-full sm:w-auto">
                     <option value="">All Actions</option>
                     <option value="LOGIN">Instructor Login</option>
@@ -350,12 +355,14 @@
                 const endDate = document.getElementById('end-date').value;
                 const search = document.getElementById('search-input').value.trim();
                 const actionType = document.getElementById('action-filter').value;
+                const userType = document.getElementById('user-type-filter').value;
 
                 const params = new URLSearchParams();
                 if (startDate) params.append('startDate', startDate);
                 if (endDate) params.append('endDate', endDate);
                 if (search) params.append('search', search);
                 if (actionType) params.append('actionType', actionType);
+                if (userType) params.append('userType', userType);
 
                 const res = await fetch(`${API_BASE_URL}/api/logs?${params.toString()}`, {
                     headers: { 'Authorization': `Bearer ${token}` }

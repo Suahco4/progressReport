@@ -100,6 +100,15 @@ const PORT = process.env.PORT || 3000; // Use Render's port or 3000 for local de
 // which is on a different domain, to make requests to this backend.
 app.use(cors());
 
+// Configure Nodemailer (Moved up to be accessible by routes)
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
 // Serve static files (like index.html, style.css, script.js) from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -373,8 +382,12 @@ app.get('/api/logs', verifyToken, async (req, res) => {
       return res.status(403).json({ error: 'Access Denied: You are not a Super Admin.' });
     }
 
-    const { startDate, endDate, search, actionType } = req.query;
+    const { startDate, endDate, search, actionType, userType } = req.query;
     let query = {};
+
+    if (userType) {
+      query.userType = userType.trim();
+    }
 
     if (actionType) {
       query.action = actionType.trim();
@@ -402,7 +415,7 @@ app.get('/api/logs', verifyToken, async (req, res) => {
     }
 
     // Fetch logs, newest first. Increase limit if filtering, otherwise default to 200
-    const limit = (startDate || endDate || search || actionType) ? 1000 : 200;
+    const limit = (startDate || endDate || search || actionType || userType) ? 1000 : 200;
     const logs = await Log.find(query).sort({ timestamp: -1 }).limit(limit);
     res.json(logs);
   } catch (error) {
@@ -531,6 +544,30 @@ app.post('/api/instructors/:uid/reset-password', verifyToken, async (req, res) =
 
     const link = await admin.auth().generatePasswordResetLink(email);
 
+    // --- Custom Password Reset Email Template ---
+    const appName = "Emmanuel Suah Academy";
+    const htmlTemplate = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #ffffff;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h2 style="color: #4f46e5; margin: 0;">${appName}</h2>
+        </div>
+        <div style="color: #333333; font-size: 16px; line-height: 1.5;">
+          <p>Hello,</p>
+          <p>We received a request to reset the password for your <strong>${email}</strong> account.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${link}" style="background-color: #4f46e5; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Reset Password</a>
+          </div>
+          <p>If you didn’t ask to reset your password, you can safely ignore this email.</p>
+          <p>Thanks,<br>The ${appName} Team</p>
+        </div>
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #888; font-size: 12px;">
+          <p>&copy; ${new Date().getFullYear()} ${appName}. All rights reserved.</p>
+        </div>
+      </div>
+    `;
+
+    await transporter.sendMail({ from: process.env.EMAIL_USER, to: email, subject: `Reset your password for ${appName}`, html: htmlTemplate });
+
     // Log the action
     await Log.create({
       instructorId: req.user.uid,
@@ -539,7 +576,7 @@ app.post('/api/instructors/:uid/reset-password', verifyToken, async (req, res) =
       details: `Generated password reset link for ${email} (UID: ${uid})`
     });
 
-    res.json({ success: true, link });
+    res.json({ success: true, message: 'Reset email sent successfully.', link });
   } catch (error) {
     console.error('Generate reset link error:', error);
     res.status(500).json({ error: 'Failed to generate reset link' });
@@ -612,14 +649,6 @@ app.post('/api/restore', verifyToken, async (req, res) => {
 
 // --- Scheduled Tasks ---
 
-// Configure Nodemailer for backups
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
 
 // Schedule a backup every Sunday at midnight (0 0 * * 0)
 cron.schedule('0 0 * * 0', async () => {

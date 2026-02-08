@@ -42,7 +42,67 @@
             searchDiv.innerHTML = '<input type="text" id="search-input" class="search-input" placeholder="Search by name or ID...">';
             document.querySelector('.section.active').insertBefore(searchDiv, document.getElementById('student-list-container'));
 
+            // Create and append pagination controls dynamically
+            const paginationDiv = document.createElement('div');
+            paginationDiv.className = 'pagination-controls';
+            paginationDiv.style.display = 'flex';
+            paginationDiv.style.justifyContent = 'space-between';
+            paginationDiv.style.alignItems = 'center';
+            paginationDiv.style.marginTop = '20px';
+            paginationDiv.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <label for="rows-per-page" style="font-size: 14px; color: #666;">Rows:</label>
+                    <select id="rows-per-page" style="padding: 2px 5px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <span id="page-info" style="font-size: 14px; color: #666;">Page 1 of 1</span>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 5px; margin-right: 10px;">
+                        <input type="number" id="goto-page" min="1" style="width: 60px; padding: 4px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Page">
+                        <button id="goto-btn" style="padding: 4px 8px; cursor: pointer; font-size: 12px;">Go</button>
+                    </div>
+                    <button id="prev-btn" style="padding: 5px 10px; cursor: pointer;" disabled>Previous</button>
+                    <button id="next-btn" style="padding: 5px 10px; cursor: pointer;" disabled>Next</button>
+                </div>
+            `;
+            document.querySelector('.section.active').appendChild(paginationDiv);
+
+            let allStudents = [];
+            let filteredStudents = [];
+            let currentPage = 1;
+            let itemsPerPage = 10;
             const studentListContainer = document.getElementById('student-list-container');
+
+            // Handle rows per page change
+            document.getElementById('rows-per-page').addEventListener('change', function() {
+                itemsPerPage = parseInt(this.value);
+                currentPage = 1;
+                renderTable();
+            });
+
+            // Handle Go to Page
+            const gotoInput = document.getElementById('goto-page');
+            const gotoBtn = document.getElementById('goto-btn');
+
+            function handleGoto() {
+                const pageNum = parseInt(gotoInput.value);
+                const totalPages = Math.ceil(filteredStudents.length / itemsPerPage) || 1;
+                if (pageNum >= 1 && pageNum <= totalPages) {
+                    currentPage = pageNum;
+                    renderTable();
+                } else {
+                    alert(`Please enter a valid page number between 1 and ${totalPages}`);
+                }
+            }
+
+            gotoBtn.addEventListener('click', handleGoto);
+            gotoInput.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') handleGoto();
+            });
 
             async function fetchAndDisplayStudents() {
                 try {
@@ -53,12 +113,21 @@
                     if (!response.ok) {
                         throw new Error(`HTTP error! Status: ${response.status}`);
                     }
-                    const students = await response.json();
+                    allStudents = await response.json();
+                    filteredStudents = [...allStudents];
+                    renderTable();
+                } catch (error) {
+                    console.error('Failed to fetch students:', error);
+                    studentListContainer.innerHTML = '<p class="error">Could not load student data. Please check the console for errors.</p>';
+                }
+            }
 
+            function renderTable() {
                     studentListContainer.innerHTML = '';
 
-                    if (students.length === 0) {
+                    if (filteredStudents.length === 0) {
                         studentListContainer.innerHTML = '<p>No students are registered in the database yet.</p>';
+                        updatePagination();
                         return;
                     }
 
@@ -67,14 +136,21 @@
 
                     const thead = table.createTHead();
                     const headerRow = thead.insertRow();
-                    headerRow.innerHTML = '<th>Student Name</th><th>Student ID</th>';
+                    headerRow.innerHTML = '<th style="width: 40px;"><input type="checkbox" id="select-all"></th><th>Student Name</th><th>Student ID</th>';
+
+                    const start = (currentPage - 1) * itemsPerPage;
+                    const end = start + itemsPerPage;
+                    const pageStudents = filteredStudents.slice(start, end);
 
                     const tbody = table.createTBody();
-                    students.forEach(student => {
+                    pageStudents.forEach(student => {
                         const row = tbody.insertRow();
+                        const checkCell = row.insertCell();
                         const nameCell = row.insertCell();
                         const idCell = row.insertCell();
                         
+                        checkCell.innerHTML = `<input type="checkbox" class="student-select" value="${student._id}">`;
+
                         nameCell.textContent = student.name;
                         nameCell.dataset.label = "Name";
 
@@ -88,10 +164,39 @@
                     });
 
                     studentListContainer.appendChild(table);
-                } catch (error) {
-                    console.error('Failed to fetch students:', error);
-                    studentListContainer.innerHTML = '<p class="error">Could not load student data. Please check the console for errors.</p>';
-                }
+
+                    // Handle Select All
+                    document.getElementById('select-all').addEventListener('change', function() {
+                        const checkboxes = document.querySelectorAll('.student-select');
+                        checkboxes.forEach(cb => cb.checked = this.checked);
+                    });
+
+                    updatePagination();
+            }
+
+            function updatePagination() {
+                const totalPages = Math.ceil(filteredStudents.length / itemsPerPage) || 1;
+                document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;
+                
+                const prevBtn = document.getElementById('prev-btn');
+                const nextBtn = document.getElementById('next-btn');
+                
+                prevBtn.disabled = currentPage === 1;
+                nextBtn.disabled = currentPage === totalPages;
+                
+                prevBtn.onclick = () => {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        renderTable();
+                    }
+                };
+                
+                nextBtn.onclick = () => {
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        renderTable();
+                    }
+                };
             }
 
             fetchAndDisplayStudents();
@@ -100,22 +205,12 @@
             const searchInput = document.getElementById('search-input');
             searchInput.addEventListener('keyup', function() {
                 const searchTerm = searchInput.value.toLowerCase();
-                const tableRows = document.querySelectorAll('.student-table tbody tr');
-                let visibleRows = 0;
-
-                tableRows.forEach(row => {
-                    const nameText = row.cells[0].textContent.toLowerCase();
-                    const idText = row.cells[1].textContent.toLowerCase();
-
-                    if (nameText.includes(searchTerm) || idText.includes(searchTerm)) {
-                        row.style.display = '';
-                        visibleRows++;
-                    } else {
-                        row.style.display = 'none';
-                    }
+                filteredStudents = allStudents.filter(student => {
+                    return student.name.toLowerCase().includes(searchTerm) || 
+                           student._id.toLowerCase().includes(searchTerm);
                 });
-
-                // You can add a "No results found" message if needed
+                currentPage = 1;
+                renderTable();
             });
         });
     </script>

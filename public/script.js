@@ -18,7 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function getStudent(id) {
         const response = await fetch(`${API_BASE_URL}/api/students/${id}`);
         if (!response.ok) {
-            throw new Error('Student not found');
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Student not found');
         }
         return await response.json();
     }
@@ -39,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 errorMessage.classList.remove('hidden');
             }
         } catch (error) {
+            errorMessage.textContent = error.message;
             errorMessage.classList.remove('hidden');
         }
     });
@@ -235,6 +237,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function displayReportCard(studentData, studentId) {
         document.getElementById('student-info-name').textContent = studentData.name;
         document.getElementById('student-info-id').textContent = studentData._id || studentId;
+
+        // Display remaining logins
+        const remaining = 10 - (studentData.loginCount || 0);
+        let countDisplay = document.getElementById('login-count-display');
+        if (!countDisplay) {
+            countDisplay = document.createElement('div');
+            countDisplay.id = 'login-count-display';
+            countDisplay.style.fontWeight = 'bold';
+            countDisplay.style.marginTop = '5px';
+            const idEl = document.getElementById('student-info-id');
+            if (idEl && idEl.parentNode) idEl.parentNode.appendChild(countDisplay);
+        }
+        countDisplay.textContent = `Remaining Views: ${remaining}`;
+        countDisplay.style.color = remaining <= 3 ? 'red' : 'inherit';
 
         const grades = studentData.grades;
         const tableHead = document.querySelector('#gradeTable thead');

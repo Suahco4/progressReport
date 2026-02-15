@@ -112,6 +112,20 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('display-id').textContent = student._id;
         document.getElementById('display-class').textContent = student.className || 'N/A';
         document.getElementById('display-roll').textContent = student.rollNumber || 'N/A';
+
+        // Display remaining logins
+        const remaining = 10 - (student.loginCount || 0);
+        let countDisplay = document.getElementById('login-count-display');
+        if (!countDisplay) {
+            countDisplay = document.createElement('div');
+            countDisplay.id = 'login-count-display';
+            countDisplay.style.fontWeight = 'bold';
+            countDisplay.style.marginTop = '5px';
+            const idEl = document.getElementById('display-id');
+            if (idEl && idEl.parentNode) idEl.parentNode.appendChild(countDisplay);
+        }
+        countDisplay.textContent = `Remaining Views: ${remaining}`;
+        countDisplay.style.color = remaining <= 3 ? 'red' : 'inherit';
         
         document.getElementById('report-year').textContent = student.academicYear || "Academic Year 2023-2024";
         document.getElementById('principal-comment-display').textContent = student.principalComment || "No remarks provided.";

@@ -74,7 +74,8 @@ const studentSchema = new mongoose.Schema({
   principalComment: { type: String, required: false },
   isArchived: { type: Boolean, default: false },
   sponsorId: { type: String, required: false },
-  grades: [gradeSchema]
+  grades: [gradeSchema],
+  loginCount: { type: Number, default: 0 }
 }, {
   // Use the provided _id instead of letting MongoDB generate one
   _id: false,
@@ -87,6 +88,8 @@ const Student = mongoose.model('Student', studentSchema);
 // --- Settings Schema ---
 const settingsSchema = new mongoose.Schema({
   sponsorId: { type: String, required: true, unique: true },
+  instructorName: { type: String },
+  instructorEmail: { type: String },
   academicYear: { type: String, default: "2023-2024" },
   schoolName: { type: String, default: "Emmanuel Suah Academy" }
 }, { timestamps: true });
@@ -203,19 +206,43 @@ app.get('/api/students', verifyToken, async (req, res) => {
 // API endpoint to GET a single student's data
 app.get('/api/students/:id', async (req, res) => {
   try {
-    const student = await Student.findById(req.params.id).lean();
+    // Check for Admin Token to bypass limit
+    let isAdmin = false;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const idToken = authHeader.split('Bearer ')[1];
+        await admin.auth().verifyIdToken(idToken);
+        isAdmin = true;
+      } catch (e) {
+        // Token invalid, treat as student
+      }
+    }
+
+    const student = await Student.findById(req.params.id);
     if (!student) {
       return res.status(404).json({ error: 'Student not found' });
     }
+
+    // Enforce Login Limit for Students (Limit: 10)
+    if (!isAdmin) {
+      if (student.loginCount >= 10) {
+        return res.status(403).json({ error: 'Maximum view limit (10) reached for this period. Please contact administration.' });
+      }
+      // Increment login count
+      student.loginCount = (student.loginCount || 0) + 1;
+      await student.save();
+    }
     
+    const studentObj = student.toObject();
     // Inject global settings (School Name/Year) from the sponsor
-    if (student.sponsorId) {
-      const settings = await Settings.findOne({ sponsorId: student.sponsorId });
+    if (studentObj.sponsorId) {
+      const settings = await Settings.findOne({ sponsorId: studentObj.sponsorId });
       if (settings) {
-        if (settings.schoolName) student.schoolName = settings.schoolName;
+        if (settings.schoolName) studentObj.schoolName = settings.schoolName;
       }
     }
-    res.json(student);
+    res.json(studentObj);
   } catch (error) {
     res.status(500).json({ error: 'Server error while fetching student' });
   }
@@ -261,6 +288,9 @@ app.put('/api/students/:id', verifyToken, async (req, res) => {
     const updateData = { name, className, rollNumber, schoolName, academicYear, principalComment, isArchived, grades };
     Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
 
+    // Reset login count on update so students can check new grades
+    updateData.loginCount = 0;
+
     if (!isSuperAdmin) {
       query.sponsorId = req.user.uid;
       updateData.sponsorId = req.user.uid; // Ensure ownership is maintained by instructor
@@ -270,6 +300,16 @@ app.put('/api/students/:id', verifyToken, async (req, res) => {
 
     if (!updatedStudent) {
       return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    // Log if the student was archived
+    if (updateData.isArchived === true) {
+      await Log.create({
+        instructorId: req.user.uid,
+        instructorEmail: req.user.email || 'Unknown',
+        action: 'ARCHIVE_STUDENT',
+        details: `Archived student: ${updatedStudent.name} (ID: ${updatedStudent._id})`
+      });
     }
 
     res.json({ success: true, message: 'Student data updated successfully', data: updatedStudent });
@@ -389,7 +429,20 @@ app.get('/api/auth/is-superadmin', verifyToken, (req, res) => {
 // Endpoint to record client-side activities (Login/Logout)
 app.post('/api/activity', verifyToken, async (req, res) => {
   try {
-    const { action, details } = req.body;
+    const { action, details, instructorName } = req.body;
+
+    // Capture Instructor Details on Login
+    if (action === 'LOGIN') {
+      await Settings.findOneAndUpdate(
+        { sponsorId: req.user.uid },
+        { 
+          instructorEmail: req.user.email,
+          instructorName: instructorName || req.user.name || 'Unknown'
+        },
+        { upsert: true, new: true }
+      );
+    }
+
     await Log.create({
       instructorId: req.user.uid,
       instructorEmail: req.user.email || 'Unknown',
@@ -528,29 +581,51 @@ app.get('/api/instructors', verifyToken, async (req, res) => {
       return res.status(403).json({ error: 'Access Denied' });
     }
 
-    const instructors = await Log.aggregate([
+    // 1. Get all registered settings (instructors)
+    const allSettings = await Settings.find().lean();
+
+    // 2. Get last login timestamps from Logs
+    const lastLogins = await Log.aggregate([
       { $match: { action: 'LOGIN' } },
       { $sort: { timestamp: -1 } },
       {
         $group: {
-          _id: "$instructorEmail",
-          instructorId: { $first: "$instructorId" },
+          _id: "$instructorId",
           lastLogin: { $max: "$timestamp" }
         }
-      },
-      { $project: { _id: 0, email: "$_id", instructorId: 1, lastLogin: 1 } },
-      { $sort: { lastLogin: -1 } }
+      }
     ]);
+    
+    // Create a map for quick lookup
+    const loginMap = {};
+    lastLogins.forEach(l => loginMap[l._id] = l.lastLogin);
 
-    // Enrich with Firebase Auth data (disabled status)
-    const enrichedInstructors = await Promise.all(instructors.map(async (inst) => {
+    // 3. Merge Data
+    const enrichedInstructors = await Promise.all(allSettings.map(async (setting) => {
       try {
-        const userRecord = await admin.auth().getUser(inst.instructorId);
-        return { ...inst, disabled: userRecord.disabled };
+        const userRecord = await admin.auth().getUser(setting.sponsorId);
+        return { 
+          instructorId: setting.sponsorId,
+          email: setting.instructorEmail || 'Unknown',
+          name: setting.instructorName || 'N/A',
+          schoolName: setting.schoolName,
+          lastLogin: loginMap[setting.sponsorId] || null,
+          disabled: userRecord.disabled 
+        };
       } catch (e) {
-        return { ...inst, disabled: null }; // User not found in Auth (deleted?)
+        return { 
+          instructorId: setting.sponsorId,
+          email: setting.instructorEmail || 'Unknown',
+          name: setting.instructorName || 'N/A',
+          schoolName: setting.schoolName,
+          lastLogin: loginMap[setting.sponsorId] || null,
+          disabled: null 
+        };
       }
     }));
+
+    // Sort by last login (recent first)
+    enrichedInstructors.sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0));
 
     res.json(enrichedInstructors);
   } catch (error) {

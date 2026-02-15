@@ -161,7 +161,11 @@ async function getAuthToken() {
 
 // Function to Fetch a single student's data from the backend
 async function getStudent(id) {
-    const response = await fetch(`${API_BASE_URL}/api/students/${id}`);
+    const token = await getAuthToken();
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${API_BASE_URL}/api/students/${id}`, { headers });
     if (!response.ok) {
         throw new Error('Student not found');
     }
@@ -216,21 +220,6 @@ async function updateReportCard(id, studentData) {
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Failed to update student.');
-    return result;
-}
-
-// Function to Delete a Report Card via API
-async function deleteReportCard(id) {
-    const token = await getAuthToken();
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await fetch(`${API_BASE_URL}/api/students/${id}`, {
-        method: 'DELETE',
-        headers: headers,
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.message || 'Failed to delete student.');
     return result;
 }
 
@@ -354,6 +343,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('submit-btn');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const deleteStudentBtn = document.getElementById('delete-student-btn');
+    
+    // Create Reset Login Button dynamically
+    const resetLoginBtn = document.createElement('button');
+    resetLoginBtn.id = 'reset-login-btn';
+    resetLoginBtn.type = 'button';
+    resetLoginBtn.textContent = 'Reset Login Count';
+    resetLoginBtn.className = 'btn-warning hidden';
+    resetLoginBtn.style.marginRight = '10px';
+    if (deleteStudentBtn && deleteStudentBtn.parentNode) {
+        deleteStudentBtn.parentNode.insertBefore(resetLoginBtn, deleteStudentBtn);
+    }
+
     const addSubjectBtn = document.getElementById('add-subject-btn');
     const subjectNamesContainer = document.getElementById('subject-names-container');
     const gradesByPeriodSection = document.getElementById('grades-by-period-section');
@@ -384,15 +385,53 @@ document.addEventListener('DOMContentLoaded', function() {
         editIdInput.setAttribute('list', 'student-ids-datalist');
         datalist.innerHTML = ''; // Clear existing options
         students.forEach(student => {
-            datalist.innerHTML += `<option value="${student._id}">${student.name}</option>`;
+            const status = student.isArchived ? ' [Archived]' : '';
+            datalist.innerHTML += `<option value="${student._id}">${student.name}${status}</option>`;
         });
     }
 
     // --- Event Listeners ---
-    generateIdBtn.addEventListener('click', function() {
-        const year = new Date().getFullYear();
-        const randomPart = Math.floor(10000 + Math.random() * 90000);
-        studentIdInput.value = `${year}${randomPart}`;
+    generateIdBtn.addEventListener('click', async function() {
+        let initials = 'ESA';
+        const schoolNameInput = document.getElementById('school-name');
+        if (schoolNameInput && schoolNameInput.value.trim()) {
+            initials = schoolNameInput.value.trim().split(' ').map(word => word[0]).join('').toUpperCase();
+        }
+        
+        const originalText = generateIdBtn.textContent;
+        generateIdBtn.textContent = 'Checking...';
+        generateIdBtn.disabled = true;
+
+        try {
+            let unique = false;
+            let attempts = 0;
+            let generatedId = '';
+
+            while (!unique && attempts < 5) {
+                const randomPart = Math.floor(100000 + Math.random() * 900000);
+                generatedId = `${initials}${randomPart}`;
+                try {
+                    await getStudent(generatedId); // Will throw if not found
+                    attempts++; // ID exists, try again
+                } catch (error) {
+                    if (error.message === 'Student not found') unique = true;
+                    else throw error;
+                }
+            }
+
+            if (unique) {
+                studentIdInput.value = generatedId;
+                showMessage('Generated unique ID.', true);
+            } else {
+                showMessage('Could not generate unique ID. Try again.', false);
+            }
+        } catch (error) {
+            console.error(error);
+            showMessage('Error verifying ID.', false);
+        } finally {
+            generateIdBtn.textContent = originalText;
+            generateIdBtn.disabled = false;
+        }
     });
 
     loadStudentBtn.addEventListener('click', async function() {
@@ -417,6 +456,16 @@ document.addEventListener('DOMContentLoaded', function() {
             calculateAndDisplayAverages();
             submitBtn.textContent = 'Update Student';
             cancelEditBtn.classList.remove('hidden');
+            
+            if (studentData.isArchived) {
+                deleteStudentBtn.textContent = 'Un-archive Student';
+                deleteStudentBtn.dataset.archived = 'true';
+            } else {
+                deleteStudentBtn.textContent = 'Archive Student';
+                deleteStudentBtn.dataset.archived = 'false';
+            }
+            resetLoginBtn.textContent = `Reset Login Count (${studentData.loginCount || 0})`;
+            resetLoginBtn.classList.remove('hidden');
             deleteStudentBtn.classList.remove('hidden');
         } catch (error) {
             alert(error.message || 'No student found with that ID.');
@@ -434,21 +483,44 @@ document.addEventListener('DOMContentLoaded', function() {
         editIdInput.value = '';
         submitBtn.textContent = 'Add Student to Database';
         cancelEditBtn.classList.add('hidden');
+        resetLoginBtn.classList.add('hidden');
         deleteStudentBtn.classList.add('hidden');
         document.getElementById('admin-message').classList.add('hidden');
         calculateAndDisplayAverages();
     });
 
     deleteStudentBtn.addEventListener('click', async function() {
-        const studentIdToDelete = studentIdInput.value;
+        const studentId = studentIdInput.value;
         const studentName = studentNameInput.value || 'this student';
-        if (confirm(`Are you sure you want to permanently delete the record for ${studentName} (ID: ${studentIdToDelete})?\n\nThis action cannot be undone.`)) {
+        const isArchived = deleteStudentBtn.dataset.archived === 'true';
+        const action = isArchived ? 'un-archive' : 'archive';
+        const confirmMsg = isArchived 
+            ? `Are you sure you want to un-archive ${studentName} (ID: ${studentId})?` 
+            : `Are you sure you want to archive ${studentName} (ID: ${studentId})?\n\nArchived students are preserved but hidden from active reports.`;
+
+        if (confirm(confirmMsg)) {
             try {
-                const result = await deleteReportCard(studentIdToDelete);
-                showMessage(result.message, result.success);
+                const result = await updateReportCard(studentId, { isArchived: !isArchived });
+                showMessage(result.message || `Student ${action}d successfully.`, result.success);
                 if (result.success) {
+                    const students = await fetchStudents();
+                    document.dispatchEvent(new CustomEvent('studentListFetched', { detail: students }));
                     cancelEditBtn.click();
                 }
+            } catch (error) {
+                showMessage(error.message, false);
+            }
+        }
+    });
+
+    resetLoginBtn.addEventListener('click', async function() {
+        const studentId = studentIdInput.value;
+        if (confirm(`Reset login count for student ID: ${studentId}?`)) {
+            try {
+                // Sending an empty update triggers the server to reset loginCount to 0
+                const result = await updateReportCard(studentId, {});
+                showMessage('Login count reset successfully.', true);
+                resetLoginBtn.textContent = 'Reset Login Count (0)';
             } catch (error) {
                 showMessage(error.message, false);
             }
@@ -629,7 +701,30 @@ async function initializeFirebase() {
                 if (user) {
                     // Check if user is Super Admin and redirect if necessary
                     try {
+                        // Ensure Name is captured if missing
+                        if (!user.displayName) {
+                            const name = prompt("Please enter your Name to complete your profile:");
+                            if (name) {
+                                await user.updateProfile({ displayName: name });
+                            }
+                        }
+
                         const token = await user.getIdToken();
+                        
+                        // Log Login Activity & Sync Name
+                        await fetch(`${API_BASE_URL}/api/activity`, {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                action: 'LOGIN',
+                                details: 'Admin logged in',
+                                instructorName: user.displayName || user.email
+                            })
+                        });
+
                         const res = await fetch(`${API_BASE_URL}/api/auth/is-superadmin`, {
                             headers: { 'Authorization': `Bearer ${token}` }
                         });

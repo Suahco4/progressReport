@@ -75,6 +75,11 @@
 
                 <form id="admin-login-form" class="space-y-6">
                     <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Instructor Name</label>
+                        <input type="text" id="admin-name" class="block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-indigo-500 focus:border-indigo-500 py-3 px-4 text-gray-900" placeholder="Your Name" required>
+                    </div>
+
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
                         <input type="email" id="admin-email" class="block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-indigo-500 focus:border-indigo-500 py-3 px-4 text-gray-900" placeholder="admin@example.com" required>
                     </div>
@@ -136,6 +141,7 @@
                     <div class="mb-4">
                         <label class="text-xs font-bold text-gray-500 uppercase block mb-2">Global Settings</label>
                         <div class="space-y-2">
+                            <input type="text" id="admin-instructor-input" class="bg-gray-800 border border-gray-700 text-white text-xs rounded px-3 py-2 w-full focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="Instructor Name">
                             <input type="text" id="admin-school-input" class="bg-gray-800 border border-gray-700 text-white text-xs rounded px-3 py-2 w-full focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="School Name">
                             
                             <div class="flex gap-2">
@@ -458,7 +464,9 @@
                         // console.log('Firebase Notification: User signed in', user.uid);
                         // Log login if not already logged in this session
                         if (!sessionStorage.getItem('session_active')) {
-                            logActivity('LOGIN', 'Instructor logged into dashboard');
+                            const nameInput = document.getElementById('admin-name');
+                            const name = nameInput ? nameInput.value.trim() : null;
+                            logActivity('LOGIN', 'Instructor logged into dashboard', name);
                             sessionStorage.setItem('session_active', 'true');
                         }
                         currentUserUid = user.uid;
@@ -477,14 +485,16 @@
         }
 
         // ================= LOGGING HELPER =================
-        async function logActivity(action, details) {
+        async function logActivity(action, details, instructorName = null) {
             try {
                 if (!auth || !auth.currentUser) return;
                 const token = await auth.currentUser.getIdToken();
+                const payload = { action, details };
+                if (instructorName) payload.instructorName = instructorName;
                 await fetch(`${API_BASE_URL}/api/activity`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ action, details })
+                    body: JSON.stringify(payload)
                 });
             } catch (e) { /* console.error("Logging failed", e); */ }
         }
@@ -804,6 +814,10 @@
                         const schoolInput = document.getElementById('admin-school-input');
                         if (schoolInput) schoolInput.value = schoolName;
                     }
+                    if (data.instructorName) {
+                        const instructorInput = document.getElementById('admin-instructor-input');
+                        if (instructorInput) instructorInput.value = data.instructorName;
+                    }
                 }
             } catch (e) {
                 // console.error("Error fetching settings:", e);
@@ -813,8 +827,9 @@
         async function updateSettings() {
             const yearInput = document.getElementById('admin-year-input').value.trim();
             const schoolInput = document.getElementById('admin-school-input').value.trim();
+            const instructorInput = document.getElementById('admin-instructor-input').value.trim();
             
-            if (yearInput || schoolInput) {
+            if (yearInput || schoolInput || instructorInput) {
                 try {
                     const token = await auth.currentUser.getIdToken();
                     const res = await fetch(`${API_BASE_URL}/api/settings`, {
@@ -823,7 +838,7 @@
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${token}`
                         },
-                        body: JSON.stringify({ academicYear: yearInput, schoolName: schoolInput })
+                        body: JSON.stringify({ academicYear: yearInput, schoolName: schoolInput, instructorName: instructorInput })
                     });
                     
                     if (!res.ok) throw new Error('Failed to save settings');

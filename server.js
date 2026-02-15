@@ -366,10 +366,10 @@ app.get('/api/settings', verifyToken, async (req, res) => {
 // API endpoint to UPDATE settings
 app.put('/api/settings', verifyToken, async (req, res) => {
   try {
-    const { academicYear, schoolName } = req.body;
+    const { academicYear, schoolName, instructorName } = req.body;
     const settings = await Settings.findOneAndUpdate(
       { sponsorId: req.user.uid },
-      { academicYear, schoolName },
+      { academicYear, schoolName, instructorName },
       { new: true, upsert: true }
     );
     res.json({ success: true, data: settings });
@@ -433,12 +433,15 @@ app.post('/api/activity', verifyToken, async (req, res) => {
 
     // Capture Instructor Details on Login
     if (action === 'LOGIN') {
+      const updateFields = { instructorEmail: req.user.email };
+      if (instructorName) updateFields.instructorName = instructorName;
+      
+      const updateOps = { $set: updateFields };
+      updateOps.$setOnInsert = { instructorName: instructorName || req.user.name || 'Unknown' };
+
       await Settings.findOneAndUpdate(
         { sponsorId: req.user.uid },
-        { 
-          instructorEmail: req.user.email,
-          instructorName: instructorName || req.user.name || 'Unknown'
-        },
+        updateOps,
         { upsert: true, new: true }
       );
     }

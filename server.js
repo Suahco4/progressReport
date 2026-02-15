@@ -55,7 +55,11 @@ mongoose.connect(MONGO_URI)
 
 // --- Mongoose Schema & Model ---
 // This defines the structure of a "student" document in your database.
-const gradeSchema = new mongoose.Schema({}, { 
+const gradeSchema = new mongoose.Schema({
+  subject: { type: String },
+  comment: { type: String },
+  attachment: { type: String } // Stores the GridFS filename
+}, { 
   strict: false,
   _id: false // Prevent Mongoose from creating an _id for subdocuments
 }); // Flexible schema for grades

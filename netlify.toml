@@ -1,0 +1,10 @@
+[build]
+  command = ""
+  publish = "."
+
+# Mimic express.static: If a file isn't found in root, try looking in /public/
+[[redirects]]
+  from = "/*"
+  to = "/public/:splat"
+  status = 200
+  condition = "File not found"

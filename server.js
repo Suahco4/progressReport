@@ -6,13 +6,16 @@ const mongoose = require('mongoose');
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 const cron = require('node-cron');
+const crypto = require('crypto');
+const multer = require('multer');
+const { GridFsStorage } = require('multer-gridfs-storage');
 
 // --- Firebase Admin Setup ---
 // IMPORTANT: You must install firebase-admin (npm install firebase-admin)
 // and place your 'serviceAccountKey.json' in the root directory.
 try {
   let serviceAccount;
-  // 1. Try to load from environment variable (Production/Render)
+  // 1. Try to load from environment variable
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     // Debugging: Log the first few characters to verify content (without exposing secrets)
     const rawConfig = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
@@ -39,8 +42,15 @@ try {
 // IMPORTANT: Your connection string should be stored as an environment variable, not here.
 const MONGO_URI = process.env.MONGO_URI;
 
+let gfs;
+
 mongoose.connect(MONGO_URI)
-  .then(() => console.log('Successfully connected to MongoDB!'))
+  .then(() => {
+    console.log('Successfully connected to MongoDB!');
+    gfs = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+      bucketName: 'uploads'
+    });
+  })
   .catch(error => console.error('Error connecting to MongoDB:', error));
 
 // --- Mongoose Schema & Model ---
@@ -93,6 +103,27 @@ const logSchema = new mongoose.Schema({
 
 const Log = mongoose.model('Log', logSchema);
 
+// --- GridFS Storage Configuration ---
+const storage = new GridFsStorage({
+  url: MONGO_URI,
+  file: (req, file) => {
+    return new Promise((resolve, reject) => {
+      crypto.randomBytes(16, (err, buf) => {
+        if (err) {
+          return reject(err);
+        }
+        const filename = buf.toString('hex') + path.extname(file.originalname);
+        const fileInfo = {
+          filename: filename,
+          bucketName: 'uploads'
+        };
+        resolve(fileInfo);
+      });
+    });
+  }
+});
+const upload = multer({ storage });
+
 const app = express();
 const PORT = process.env.PORT || 3000; // Use Render's port or 3000 for local dev
 
@@ -133,7 +164,7 @@ app.get('/superadmin', (req, res) => {
 });
 
 // Add middleware to parse JSON bodies from incoming requests
-app.use(express.json({ limit: '50mb' })); // Increased limit for backup restoration
+app.use(express.json({ limit: '16mb' })); // Set request size limit to 16MB
 
 // --- Authentication Middleware ---
 const verifyToken = async (req, res, next) => {
@@ -313,6 +344,29 @@ app.get('/api/config/firebase', (req, res) => {
     messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.FIREBASE_APP_ID
   });
+});
+
+// --- GridFS Routes ---
+
+// Upload a file (e.g., POST /api/upload with form-data key 'file')
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  res.json({ file: req.file });
+});
+
+// Retrieve/Stream a file
+app.get('/api/files/:filename', async (req, res) => {
+  if (!gfs) return res.status(500).json({ error: 'GridFS not initialized' });
+
+  try {
+    const files = await gfs.find({ filename: req.params.filename }).toArray();
+    if (!files || files.length === 0) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    // Stream the file to the client
+    gfs.openDownloadStreamByName(req.params.filename).pipe(res);
+  } catch (error) {
+    res.status(500).json({ error: 'Error retrieving file' });
+  }
 });
 
 // --- Super Admin / Logging Endpoints ---

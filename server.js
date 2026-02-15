@@ -100,6 +100,7 @@ const Settings = mongoose.model('Settings', settingsSchema);
 const logSchema = new mongoose.Schema({
   instructorId: { type: String }, // No longer required to allow student logs
   instructorEmail: { type: String },
+  instructorName: { type: String },
   studentId: { type: String },
   studentName: { type: String },
   userType: { type: String, default: 'INSTRUCTOR' }, // 'INSTRUCTOR' or 'STUDENT'
@@ -266,6 +267,7 @@ app.post('/api/students', verifyToken, async (req, res) => {
     await Log.create({
       instructorId: sponsorId,
       instructorEmail: req.user.email || 'Unknown',
+      instructorName: req.user.name || 'Unknown',
       action: 'ADD_STUDENT',
       details: `Added student: ${name} (ID: ${id})`
     });
@@ -307,6 +309,7 @@ app.put('/api/students/:id', verifyToken, async (req, res) => {
       await Log.create({
         instructorId: req.user.uid,
         instructorEmail: req.user.email || 'Unknown',
+        instructorName: req.user.name || 'Unknown',
         action: 'ARCHIVE_STUDENT',
         details: `Archived student: ${updatedStudent.name} (ID: ${updatedStudent._id})`
       });
@@ -339,6 +342,7 @@ app.delete('/api/students/:id', verifyToken, async (req, res) => {
     await Log.create({
       instructorId: req.user.uid,
       instructorEmail: req.user.email || 'Unknown',
+      instructorName: req.user.name || 'Unknown',
       action: 'DELETE_STUDENT',
       details: `Deleted student: ${deletedStudent.name} (ID: ${deletedStudent._id})`
     });
@@ -449,6 +453,7 @@ app.post('/api/activity', verifyToken, async (req, res) => {
     await Log.create({
       instructorId: req.user.uid,
       instructorEmail: req.user.email || 'Unknown',
+      instructorName: instructorName || req.user.name || 'Unknown',
       userType: 'INSTRUCTOR',
       action: action,
       details: details || ''
@@ -566,6 +571,7 @@ app.delete('/api/logs', verifyToken, async (req, res) => {
     await Log.create({
       instructorId: req.user.uid,
       instructorEmail: req.user.email || 'Unknown',
+      instructorName: req.user.name || 'Unknown',
       action: 'CLEANUP_LOGS',
       details: `Deleted ${result.deletedCount} logs older than ${olderThan}`
     });
@@ -660,6 +666,7 @@ app.post('/api/instructors/:uid/status', verifyToken, async (req, res) => {
     await Log.create({
       instructorId: req.user.uid,
       instructorEmail: req.user.email || 'Unknown',
+      instructorName: req.user.name || 'Unknown',
       action: disabled ? 'BAN_INSTRUCTOR' : 'UNBAN_INSTRUCTOR',
       details: `Target UID: ${uid}`
     });
@@ -713,6 +720,7 @@ app.post('/api/instructors/:uid/reset-password', verifyToken, async (req, res) =
     await Log.create({
       instructorId: req.user.uid,
       instructorEmail: req.user.email || 'Unknown',
+      instructorName: req.user.name || 'Unknown',
       action: 'GENERATE_RESET_LINK',
       details: `Generated password reset link for ${email} (UID: ${uid})`
     });
@@ -823,7 +831,8 @@ cron.schedule('0 0 * * 0', async () => {
       action: 'SYSTEM_BACKUP',
       details: 'Weekly automated backup sent via email',
       userType: 'SYSTEM',
-      instructorEmail: 'system@scheduler'
+      instructorEmail: 'system@scheduler',
+      instructorName: 'System'
     });
     console.log('Weekly backup email sent.');
   } catch (error) {

@@ -1169,24 +1169,20 @@
             const yearMatch = baseYearStr.match(/^(\d{4})/);
             const prefix = yearMatch ? yearMatch[1] : new Date().getFullYear().toString();
 
-            // Find the highest sequence number for this prefix among existing students
-            let maxSeq = 0;
-            students.forEach(s => {
-                const sid = String(s.id);
-                if (sid.startsWith(prefix)) {
-                    // Extract the part after the year
-                    const suffix = sid.substring(prefix.length);
-                    // Check if it's a valid number (expecting 6 digits)
-                    if (/^\d+$/.test(suffix)) {
-                        const seq = parseInt(suffix, 10);
-                        if (seq > maxSeq) maxSeq = seq;
-                    }
-                }
-            });
+            let nextId = '';
+            let isUnique = false;
+            let attempts = 0;
 
-            // Increment and pad to 6 digits
-            const nextSeq = maxSeq + 1;
-            const nextId = `${prefix}${nextSeq.toString().padStart(6, '0')}`;
+            // Generate random ID and ensure uniqueness
+            while (!isUnique && attempts < 50) {
+                const randomPart = Math.floor(Math.random() * 1000000);
+                nextId = `${prefix}${randomPart.toString().padStart(6, '0')}`;
+                
+                if (!students.some(s => s.id === nextId)) {
+                    isUnique = true;
+                }
+                attempts++;
+            }
             
             document.getElementById('edit-id').value = nextId;
         }

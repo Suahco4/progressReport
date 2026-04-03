@@ -56,9 +56,9 @@ mongoose.connect(MONGO_URI)
 // --- Mongoose Schema & Model ---
 // This defines the structure of a "student" document in your database.
 const gradeSchema = new mongoose.Schema({
-  subject: { type: String },
-  comment: { type: String },
-  attachment: { type: String } // Stores the GridFS filename
+  subject: { type: String, alias: 's', maxlength: 40 },
+  comment: { type: String, alias: 'c', maxlength: 100 },
+  attachment: { type: String, alias: 'at' } // Stores the GridFS filename
 }, { 
   strict: false,
   _id: false // Prevent Mongoose from creating an _id for subdocuments
@@ -66,21 +66,36 @@ const gradeSchema = new mongoose.Schema({
 
 const studentSchema = new mongoose.Schema({
   _id: { type: String, required: true }, // Use the student ID as the primary key
-  name: { type: String, required: true },
-  className: { type: String, required: false },
-  rollNumber: { type: String, required: false },
-  schoolName: { type: String, required: false },
-  academicYear: { type: String, required: false },
-  principalComment: { type: String, required: false },
-  isArchived: { type: Boolean, default: false },
-  sponsorId: { type: String, required: false },
-  grades: [gradeSchema],
-  loginCount: { type: Number, default: 0 }
+  name: { type: String, required: true, alias: 'n', maxlength: 60 },
+  className: { type: String, required: false, alias: 'cn', maxlength: 20 },
+  rollNumber: { type: String, required: false, alias: 'rn', maxlength: 15 },
+  schoolName: { type: String, required: false, alias: 'sn', maxlength: 100 },
+  academicYear: { type: String, required: false, alias: 'ay', maxlength: 15 },
+  principalComment: { type: String, required: false, alias: 'pc', maxlength: 250 },
+  isArchived: { type: Boolean, default: false, alias: 'ia' },
+  sponsorId: { type: String, required: false, alias: 'sid' },
+  grades: { 
+    type: [gradeSchema], 
+    alias: 'g',
+    validate: [val => val.length <= 15, '{PATH} exceeds the limit of 15 subjects'] 
+  },
+  loginCount: { type: Number, default: 0, alias: 'lc' }
 }, {
-  // Use the provided _id instead of letting MongoDB generate one
   _id: false,
-  // Automatically add createdAt and updatedAt timestamps
   timestamps: true
+});
+
+// Middleware to enforce 1KB (1024 bytes) limit per document
+studentSchema.pre('save', function(next) {
+  // Use the underlying MongoDB BSON parser to calculate the exact size
+  // include virtuals and internal fields to be precise
+  const docSize = mongoose.mongo.BSON.calculateObjectSize(this.toObject());
+
+  if (docSize > 1024) {
+    const error = new Error(`Document size (${docSize} bytes) exceeds the 1KB limit. Reduce field lengths or subject count.`);
+    return next(error);
+  }
+  next();
 });
 
 const Student = mongoose.model('Student', studentSchema);

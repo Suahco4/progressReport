@@ -1,8 +1,7 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+@import "tailwindcss";
+
+/* Tailwind v4 automatically handles the 'Preflight' (CSS reset). 
+   We remove the global * selector to prevent interference with Tailwind's box-sizing. */
 
 body {
     font-family: 'Arial', sans-serif;
@@ -11,8 +10,8 @@ body {
     line-height: 1.6;
 }
 
-.container {
-    max-width: 900px;
+/* Renamed to legacy-container to avoid conflict with Tailwind's .container utility */
+.legacy-container {
     margin: 0 auto;
     padding: 20px;
     min-height: 100vh;

@@ -693,6 +693,38 @@ app.post('/api/instructors/:uid/status', verifyToken, async (req, res) => {
   }
 });
 
+// Endpoint to permanently DELETE an instructor (For Super Admin)
+app.delete('/api/instructors/:uid', verifyToken, async (req, res) => {
+  try {
+    // Security Check
+    if (!req.user.email || !SUPER_ADMINS.includes(req.user.email)) {
+      return res.status(403).json({ error: 'Access Denied' });
+    }
+
+    const { uid } = req.params;
+
+    // 1. Delete from Firebase Auth
+    await admin.auth().deleteUser(uid);
+
+    // 2. Delete associated settings
+    await Settings.findOneAndDelete({ sponsorId: uid });
+
+    // 3. Log the action
+    await Log.create({
+      instructorId: req.user.uid,
+      instructorEmail: req.user.email || 'Unknown',
+      instructorName: req.user.name || 'Unknown',
+      action: 'DELETE_INSTRUCTOR',
+      details: `Permanently deleted instructor account and settings (Target UID: ${uid})`
+    });
+
+    res.json({ success: true, message: 'Instructor and associated settings deleted successfully.' });
+  } catch (error) {
+    console.error('Delete instructor error:', error);
+    res.status(500).json({ error: 'Failed to delete instructor: ' + error.message });
+  }
+});
+
 // Endpoint to generate password reset link (For Super Admin)
 app.post('/api/instructors/:uid/reset-password', verifyToken, async (req, res) => {
   try {

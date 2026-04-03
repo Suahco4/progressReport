@@ -232,9 +232,6 @@
                                 <button onclick="exportToCSV(); document.getElementById('action-menu').classList.add('hidden')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
                                     <i class="fa-solid fa-file-csv text-green-600"></i> Export CSV
                                 </button>
-                                <button onclick="bulkDelete(); document.getElementById('action-menu').classList.add('hidden')" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2">
-                                    <i class="fa-solid fa-trash-can"></i> Bulk Delete
-                                </button>
                                 <button id="toggle-archived-btn" onclick="toggleArchivedView(); document.getElementById('action-menu').classList.add('hidden')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
                                     <i class="fa-solid fa-box-archive text-gray-500"></i> Show Archived
                                 </button>
@@ -251,9 +248,6 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
-                                    <input type="checkbox" id="select-all-checkbox" onclick="toggleSelectAll()" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
-                                </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
@@ -429,7 +423,6 @@
         let academicYear = "2025-2026";
         let schoolName = "Emmanuel Suah Academy";
         let currentFilteredStudents = [];
-        let selectedStudentIds = new Set();
         let currentPage = 1;
         const itemsPerPage = 10;
         let currentEditId = null;
@@ -1039,24 +1032,13 @@
             const end = start + itemsPerPage;
             const pageStudents = currentFilteredStudents.slice(start, end);
             
-            // Update header checkbox state based on current page selection
-            const allSelected = pageStudents.length > 0 && pageStudents.every(s => selectedStudentIds.has(s.id));
-            document.getElementById('select-all-checkbox').checked = allSelected;
-
             pageStudents.forEach(student => {
                 const stats = calculateStats(student);
                 const row = document.createElement('tr');
                 row.className = "hover:bg-gray-50";
                 const formattedDate = student.updatedAt ? new Date(student.updatedAt).toLocaleString() : 'N/A';
-                const isSelected = selectedStudentIds.has(student.id);
                 
                 row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <input type="checkbox" class="student-checkbox rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" 
-                            value="${student.id}" 
-                            ${isSelected ? 'checked' : ''} 
-                            onchange="toggleStudentSelection('${student.id}')">
-                    </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">${student.id}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${student.name}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${student.class}</td>
@@ -1093,70 +1075,6 @@
             document.getElementById('pagination-info').textContent = `Page ${currentPage} of ${totalPages}`;
             document.getElementById('prev-btn').disabled = currentPage === 1;
             document.getElementById('next-btn').disabled = currentPage === totalPages;
-        }
-
-        // ================= BULK ACTIONS LOGIC =================
-        function toggleSelectAll() {
-            const selectAllCheckbox = document.getElementById('select-all-checkbox');
-            const isChecked = selectAllCheckbox.checked;
-            
-            const start = (currentPage - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            const pageStudents = currentFilteredStudents.slice(start, end);
-            
-            pageStudents.forEach(student => {
-                if (isChecked) {
-                    selectedStudentIds.add(student.id);
-                } else {
-                    selectedStudentIds.delete(student.id);
-                }
-            });
-            
-            renderStudentTable();
-        }
-
-        function toggleStudentSelection(id) {
-            if (selectedStudentIds.has(id)) {
-                selectedStudentIds.delete(id);
-            } else {
-                selectedStudentIds.add(id);
-            }
-            
-            // Update header checkbox
-            const start = (currentPage - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            const pageStudents = currentFilteredStudents.slice(start, end);
-            const allSelected = pageStudents.length > 0 && pageStudents.every(s => selectedStudentIds.has(s.id));
-            document.getElementById('select-all-checkbox').checked = allSelected;
-        }
-
-        async function bulkDelete() {
-            if (selectedStudentIds.size === 0) {
-                showToast("No students selected.", "error");
-                return;
-            }
-            
-            openConfirmModal(
-                "Confirm Bulk Delete",
-                `Are you sure you want to delete ${selectedStudentIds.size} selected students? This action cannot be undone.`,
-                async () => {
-                    const promises = [];
-                    for (const id of selectedStudentIds) {
-                        promises.push(deleteStudentApi(id, true));
-                    }
-                    
-                    try {
-                        await Promise.all(promises);
-                        selectedStudentIds.clear();
-                        await fetchStudents();
-                        showToast("Bulk delete completed.");
-                    } catch (e) {
-                        showToast("Some deletions failed.", "error");
-                        await fetchStudents();
-                    }
-                },
-                true // isDestructive
-            );
         }
 
         // ================= EDIT/ADD STUDENT LOGIC =================

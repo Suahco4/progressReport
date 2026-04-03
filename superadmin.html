@@ -420,7 +420,15 @@
                 await auth.signInWithEmailAndPassword(email, password);
                 errorMsg.classList.add('hidden');
             } catch (error) {
-                errorText.textContent = "Access Denied: " + error.message;
+                let friendlyMsg = "Invalid email or password. Please check your credentials and try again.";
+                
+                if (error.code === 'auth/user-disabled') {
+                    friendlyMsg = "This account has been disabled. Please contact technical support.";
+                } else if (error.code === 'auth/too-many-requests') {
+                    friendlyMsg = "Access temporarily locked due to multiple failed attempts. Please try again later.";
+                }
+
+                errorText.textContent = friendlyMsg;
                 errorMsg.classList.remove('hidden');
             }
         });

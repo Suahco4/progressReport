@@ -937,10 +937,16 @@
                 .catch((error) => {
                     btn.disabled = false;
                     spinner.classList.add('hidden');
-                    const errorCode = error.code;
-                    const errorMessage = error.message;
-                    // console.error('Firebase Notification [Login Error]:', errorMessage);
-                    document.getElementById('login-error-text').textContent = errorMessage;
+                    
+                    let friendlyMsg = "Invalid email or password. Please check your credentials and try again.";
+                    
+                    if (error.code === 'auth/user-disabled') {
+                        friendlyMsg = "This account has been disabled. Please contact the system administrator.";
+                    } else if (error.code === 'auth/too-many-requests') {
+                        friendlyMsg = "Too many failed login attempts. Please try again later.";
+                    }
+
+                    document.getElementById('login-error-text').textContent = friendlyMsg;
                     adminErrorMsg.classList.remove('hidden');
                 });
         });

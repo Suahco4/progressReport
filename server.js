@@ -200,6 +200,12 @@ const verifyToken = async (req, res, next) => {
 
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
+    
+    // Enforce Email Verification
+    if (!decodedToken.email_verified) {
+      return res.status(403).json({ error: 'Unauthorized: Your email must be verified to access this platform.' });
+    }
+
     req.user = decodedToken; // Attach user info (uid, email, etc.) to request
     next();
   } catch (error) {

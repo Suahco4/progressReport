@@ -357,6 +357,13 @@
                 auth.onAuthStateChanged(async user => {
                     if (user) {
                         try {
+                            // Enforce Email Verification
+                            if (!user.emailVerified) {
+                                openMessageModal("Verification Required", "Your email address is not verified. Please check your inbox and click the confirmation link before logging in.");
+                                auth.signOut();
+                                return;
+                            }
+
                             // Check against server to support Env Var configuration
                             const token = await user.getIdToken();
                             const res = await fetch(`${API_BASE_URL}/api/auth/is-superadmin`, {

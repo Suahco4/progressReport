@@ -454,6 +454,16 @@
                 // Auth State Listener
                 auth.onAuthStateChanged((user) => {
                     if (user) {
+                        // Check for Email Verification
+                        if (!user.emailVerified) {
+                            showToast("Please verify your email address. Check your inbox for a confirmation link.", "error");
+                            // Optionally re-send verification if they just logged in
+                            // user.sendEmailVerification();
+                            auth.signOut();
+                            showSection('admin-login-section');
+                            return;
+                        }
+
                         // console.log('Firebase Notification: User signed in', user.uid);
                         // Log login if not already logged in this session
                         if (!sessionStorage.getItem('session_active')) {

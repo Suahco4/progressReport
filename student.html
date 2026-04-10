@@ -12,6 +12,36 @@
         .fade-in { animation: fadeIn 0.4s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
+    <style media="print">
+        @page {
+            size: A4;
+            margin: 10mm; /* Adjust margins as needed for A4 */
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #fff; /* Ensure white background for print */
+            -webkit-print-color-adjust: exact; /* For Chrome/Safari to print background colors */
+            print-color-adjust: exact; /* Standard */
+        }
+        /* Hide elements not needed for printing */
+        header,
+        #student-login-section,
+        #session-expired-modal,
+        .no-print,
+        .flex.justify-between.items-center.pt-6.border-t.border-gray-100 /* Action buttons */
+        {
+            display: none !important;
+        }
+        /* Ensure report section is visible and takes full width */
+        #report-section {
+            visibility: visible !important;
+            position: static !important; /* Remove absolute positioning */
+            width: 100% !important;
+            padding: 0 !important; /* Remove padding for full content width */
+            box-shadow: none !important; /* Remove shadow for print */
+        }
+    </style>
     <!-- Favicons -->
     <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />

@@ -147,9 +147,7 @@ function calculateAndDisplayAverages() {
 }
 
 // --- API Communication Layer ---
-const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:3000'
-    : 'https://progressreport-7jlm.onrender.com';
+const API_BASE_URL = window.location.origin;
 const adminForm = document.getElementById('admin-form');
 const adminMessage = document.getElementById('admin-message');
 

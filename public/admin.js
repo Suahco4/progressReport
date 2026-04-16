@@ -686,7 +686,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function initializeFirebase() {
     try {
-        const response = await fetch(`/api/config/firebase`);
+        const response = await fetch(`${API_BASE_URL}/api/config/firebase`);
         if (!response.ok) {
             throw new Error('Failed to load Firebase configuration');
         }

@@ -10,7 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- API Communication Layer ---
     // This should be the URL of your deployed backend server (e.g., from Render).
     // Using a relative path since the frontend is served by the same server as the API.
-    const API_BASE_URL = window.location.origin;
+    const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3000'
+        : 'https://progressreport-7jlm.onrender.com';
 
     let currentStudentData = null; // To store the current student's data
 

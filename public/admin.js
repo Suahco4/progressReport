@@ -147,7 +147,9 @@ function calculateAndDisplayAverages() {
 }
 
 // --- API Communication Layer ---
-const API_BASE_URL = window.location.origin;
+const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:3000'
+    : 'https://progressreport-7jlm.onrender.com';
 const adminForm = document.getElementById('admin-form');
 const adminMessage = document.getElementById('admin-message');
 
@@ -686,7 +688,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function initializeFirebase() {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/config/firebase`);
+        const response = await fetch(`/api/config/firebase`);
         if (!response.ok) {
             throw new Error('Failed to load Firebase configuration');
         }

@@ -443,7 +443,7 @@ app.get('/api/files/:filename', async (req, res) => {
 // Define allowed super admin emails
 const SUPER_ADMINS = process.env.SUPER_ADMIN_EMAILS 
   ? process.env.SUPER_ADMIN_EMAILS.split(',').map(email => email.trim())
-  : [];
+  : ['theadmin@gmail.com', 'principal@school.com', 'your-email@example.com'];
 
 // Endpoint to check super admin status (Used by frontend to validate session)
 app.get('/api/auth/is-superadmin', verifyToken, (req, res) => {

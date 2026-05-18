@@ -49,14 +49,18 @@ const MONGO_URI = process.env.MONGO_URI;
 
 let gfs;
 
-mongoose.connect(MONGO_URI)
-  .then(() => {
-    console.log('Successfully connected to MongoDB!');
-    gfs = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
-      bucketName: 'uploads'
-    });
-  })
-  .catch(error => console.error('Error connecting to MongoDB:', error));
+if (MONGO_URI) {
+  mongoose.connect(MONGO_URI)
+    .then(() => {
+      console.log('Successfully connected to MongoDB!');
+      gfs = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+        bucketName: 'uploads'
+      });
+    })
+    .catch(error => console.error('Error connecting to MongoDB:', error));
+} else {
+  console.error("FATAL ERROR: MONGO_URI environment variable is missing.");
+}
 
 // --- Mongoose Schema & Model ---
 // This defines the structure of a "student" document in your database.
@@ -906,9 +910,11 @@ app.get('*', (req, res) => {
 });
 
 // Start the server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}
 
 // Export the app for Vercel serverless deployment
 module.exports = app;

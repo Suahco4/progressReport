@@ -10,6 +10,11 @@ const crypto = require('crypto');
 const multer = require('multer');
 const { GridFsStorage } = require('multer-gridfs-storage');
 
+// Define allowed super admin emails (Moved to top to prevent ReferenceErrors in routes)
+const SUPER_ADMINS = process.env.SUPER_ADMIN_EMAILS 
+  ? process.env.SUPER_ADMIN_EMAILS.split(',').map(email => email.trim())
+  : ['theadmin@gmail.com', 'principal@school.com', 'your-email@example.com'];
+
 // --- Firebase Admin Setup ---
 // IMPORTANT: You must install firebase-admin (npm install firebase-admin)
 // and place your 'serviceAccountKey.json' in the root directory.
@@ -439,11 +444,6 @@ app.get('/api/files/:filename', async (req, res) => {
 });
 
 // --- Super Admin / Logging Endpoints ---
-
-// Define allowed super admin emails
-const SUPER_ADMINS = process.env.SUPER_ADMIN_EMAILS 
-  ? process.env.SUPER_ADMIN_EMAILS.split(',').map(email => email.trim())
-  : ['theadmin@gmail.com', 'principal@school.com', 'your-email@example.com'];
 
 // Endpoint to check super admin status (Used by frontend to validate session)
 app.get('/api/auth/is-superadmin', verifyToken, (req, res) => {
